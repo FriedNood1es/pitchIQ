@@ -1,0 +1,211 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ *
+ * Design tokens — SofaScore-inspired. Dark is the default surface;
+ * light is a validated alternate (not an automatic flip). Components
+ * reference these roles via `var(--…)` so the theme swaps in one place.
+ *
+ * Theme resolution: no attribute → follow the OS scheme; an explicit
+ * `data-theme` on <html> (set by the UI toggle) wins over the OS.
+ * ------------------------------------------------------------------ */
+:root,
+:root[data-theme="dark"] {
+  --page: #0f1012;
+  --surface: #191a1e;
+  --surface-2: #212228;
+  --surface-3: #2a2c33;
+  --border: rgba(255, 255, 255, 0.08);
+  --ring: rgba(255, 255, 255, 0.14);
+  --text: #f2f3f5;
+  --text-2: #a3a6ad;
+  --muted: #8b8f98;
+  --brand: #17c964; /* pitch green — PitchIQ accent, used sparingly */
+  --brand-ink: #052e16;
+  --team-a: #3987e5; /* validated categorical slot 1 (dark) */
+  --team-b: #e66767; /* validated categorical slot 6 (dark) */
+  --good: #23c552;
+  --draw: #6b7280;
+  --loss: #e5484d;
+  --grid: #2a2b30;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --page: #f4f5f7;
+    --surface: #ffffff;
+    --surface-2: #f3f4f6;
+    --surface-3: #e9ebef;
+    --border: rgba(11, 11, 11, 0.1);
+    --ring: rgba(11, 11, 11, 0.18);
+    --text: #0b1220;
+    --text-2: #52565f;
+    --muted: #5f6368;
+    --brand: #0f9d58;
+    --brand-ink: #ffffff;
+    --team-a: #2a78d6;
+    --team-b: #e34948;
+    --good: #0ca30c;
+    --draw: #8a8f98;
+    --loss: #d03b3b;
+    --grid: #e1e0d9;
+  }
+}
+
+:root[data-theme="light"] {
+  --page: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #f3f4f6;
+  --surface-3: #e9ebef;
+  --border: rgba(11, 11, 11, 0.1);
+  --ring: rgba(11, 11, 11, 0.18);
+  --text: #0b1220;
+  --text-2: #52565f;
+  --muted: #898781;
+  --brand: #0f9d58;
+  --brand-ink: #ffffff;
+  --team-a: #2a78d6;
+  --team-b: #e34948;
+  --good: #0ca30c;
+  --draw: #8a8f98;
+  --loss: #d03b3b;
+  --grid: #e1e0d9;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Reusable surface card */
+.tl-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+/* Consistent card-section heading */
+.tl-card-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* Native selects, restyled to sit on the dark/light surface */
+.tl-select {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  outline: none;
+}
+.tl-select:focus-visible {
+  border-color: var(--brand);
+}
+.tl-select:disabled {
+  opacity: 0.5;
+}
+
+/* Trigger for the custom team picker — matches .tl-select so
+   the two controls read as one family. */
+.tl-field {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  outline: none;
+}
+.tl-field:focus-visible {
+  border-color: var(--brand);
+}
+
+/* Accessible focus ring for every interactive control */
+button:focus-visible,
+a:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Form W/D/L pill */
+.form-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Report sections rise gently into view when a comparison lands. */
+@keyframes tl-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.tl-reveal {
+  animation: tl-rise 0.35s ease-out both;
+}
+.tl-reveal-delay-1 { animation-delay: 0.05s; }
+.tl-reveal-delay-2 { animation-delay: 0.1s; }
+.tl-reveal-delay-3 { animation-delay: 0.15s; }
+.tl-reveal-delay-4 { animation-delay: 0.2s; }
+.tl-reveal-delay-5 { animation-delay: 0.25s; }
+
+/* Shimmer placeholder while a section is loading. */
+@keyframes tl-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.tl-skeleton {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--surface-3) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: tl-shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-reveal,
+  .tl-reveal-delay-1,
+  .tl-reveal-delay-2,
+  .tl-reveal-delay-3,
+  .tl-reveal-delay-4,
+  .tl-reveal-delay-5 {
+    animation: none;
+  }
+  .tl-skeleton {
+    animation: none;
+  }
+}
