@@ -40,7 +40,7 @@ export function TeamCrest({ name, crestColor, size = 22 }: Props) {
   return (
     <span
       aria-hidden="true"
-      className="inline-flex shrink-0 items-center justify-center rounded-full font-bold text-white"
+      className="inline-flex shrink-0 items-center justify-center rounded-full font-bold text-[var(--on-color)]"
       style={{
         width: size,
         height: size,

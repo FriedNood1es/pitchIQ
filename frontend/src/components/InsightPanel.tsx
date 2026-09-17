@@ -26,7 +26,7 @@ export function InsightPanel({ insight, generatedAt, generatedBy }: Props) {
         <h2 className="tl-card-title">Match Insight</h2>
       </div>
       <p
-        className="border-l-2 pl-4 text-[0.95rem] leading-relaxed text-[var(--text)]"
+        className="border-l pl-4 text-[0.95rem] leading-relaxed text-[var(--text)]"
         style={{ borderColor: "var(--brand)" }}
       >
         {insight}

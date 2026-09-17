@@ -7,7 +7,7 @@ lineups — to guide a match prediction.
 
 ## Commands
 
-- Dev servers (run both): `npm run dev:backend` (:4000) and `npm run dev:frontend` (:5173).
+- Dev servers: `npm run dev` starts both (`dev:backend` on :4000 + `dev:frontend` on :5173, via `concurrently`).
   Or individually: `npm run dev -w backend`, `npm run dev -w frontend`.
 - **There are no tests, no linter, no CI.** The only verification is a typecheck/build:
   `npm run build -w backend` (`tsc -p tsconfig.json`) and `npm run build -w frontend` (`tsc -b && vite build`).

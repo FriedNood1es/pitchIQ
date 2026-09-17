@@ -25,8 +25,7 @@ Requires Node. Data comes from BSD, so the backend needs `backend/.env` with a
 
 ```sh
 npm install
-npm run dev:backend   # Express API on :4000
-npm run dev:frontend  # Vite dashboard on :5173
+npm run dev   # starts both: Express API on :4000 + Vite dashboard on :5173
 ```
 
 The frontend proxies `/api` to the backend. Verification is a typecheck/build

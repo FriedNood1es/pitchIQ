@@ -53,6 +53,9 @@ function TeamBlock({
 export function MatchHero({ competitionName, teamA, teamB }: Props) {
   return (
     <div className="tl-card p-5">
+      <h1 className="sr-only">
+        {teamA.name} versus {teamB.name}, {competitionName}
+      </h1>
       <div className="text-center text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-4">
         {competitionName}
       </div>

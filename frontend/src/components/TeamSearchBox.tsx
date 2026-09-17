@@ -25,6 +25,7 @@ export function TeamSearchBox({ onSelect }: Props) {
 
   const { data: results, isFetching } = useSearch(debounced);
   const showResults = open && debounced.trim().length >= 2;
+  const showHint = open && value.trim().length === 1;
 
   // Close when clicking anywhere outside the widget.
   useEffect(() => {
@@ -49,7 +50,11 @@ export function TeamSearchBox({ onSelect }: Props) {
     <div ref={rootRef} className="relative">
       <input
         type="search"
-        placeholder="Search teams…"
+        role="combobox"
+        aria-expanded={showResults}
+        aria-controls="team-search-listbox"
+        aria-autocomplete="list"
+        placeholder="Search teams (min. 2 chars)…"
         aria-label="Search teams"
         value={value}
         onChange={(e) => {
@@ -63,12 +68,18 @@ export function TeamSearchBox({ onSelect }: Props) {
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="w-56 rounded-lg border px-3 py-1.5 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)]"
+        className="w-full max-w-[14rem] rounded-lg border px-3 py-1.5 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus-visible:border-[var(--brand)] sm:w-56 sm:max-w-none"
         style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
       />
+      {showHint && (
+        <p className="absolute right-0 top-full z-40 mt-1 rounded-xl border px-3 py-2 text-xs text-[var(--muted)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          Keep typing — need at least 2 characters.
+        </p>
+      )}
       {showResults && (
         <ul
-          className="absolute right-0 top-full z-40 mt-1 max-h-80 w-80 overflow-auto rounded-xl border p-1"
+          id="team-search-listbox"
+          className="absolute left-0 right-0 top-full z-40 mt-1 max-h-80 overflow-auto rounded-xl border p-1 sm:left-auto sm:w-80"
           style={{ borderColor: "var(--border)", background: "var(--surface)" }}
           role="listbox"
         >
@@ -76,7 +87,7 @@ export function TeamSearchBox({ onSelect }: Props) {
             <li className="px-3 py-2 text-sm text-[var(--muted)]">Searching…</li>
           )}
           {results && results.length === 0 && (
-            <li className="px-3 py-2 text-sm text-[var(--muted)]">No teams found.</li>
+            <li className="px-3 py-2 text-sm text-[var(--muted)]">No teams found — try the full club name.</li>
           )}
           {results?.map((r) => (
             <li key={`${r.competition}/${r.id}`}>

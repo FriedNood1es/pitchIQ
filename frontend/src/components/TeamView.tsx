@@ -4,6 +4,7 @@ import { MatchRow } from "./MatchRow";
 import { PreviewPanel } from "./PreviewPanel";
 import { TeamCrest } from "./TeamCrest";
 import { TeamStatsPanel } from "./TeamStatsPanel";
+import { useFavoriteTeams } from "../hooks/useFavoriteTeams";
 import { useFixtures } from "../hooks/useFixtures";
 import { usePreview } from "../hooks/usePreview";
 import { useTeamStats } from "../hooks/useTeamStats";
@@ -100,6 +101,9 @@ export function TeamView({
     };
   }, [fixtures, team]);
 
+  const [, toggleFavorite, isFavorite] = useFavoriteTeams();
+  const starred = isFavorite(competition, team);
+
   return (
     <div className="space-y-5">
       <div className="tl-card flex flex-wrap items-center gap-4 p-5">
@@ -118,14 +122,36 @@ export function TeamView({
             size={44}
           />
           <div>
-            <h2 className="text-xl font-extrabold tracking-tight text-[var(--text)]">
+            <h1 className="text-xl font-extrabold tracking-tight text-[var(--text)]">
               {teamInfo?.name ?? name}
-            </h2>
+            </h1>
             <div className="flex items-center gap-1.5 text-sm text-[var(--muted)]">
               <CountryFlag country={country} width={18} />
               {competitionName}
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() =>
+              toggleFavorite({
+                id: team,
+                name: teamInfo?.name ?? name,
+                crestColor: teamInfo?.crestColor ?? "var(--surface-3)",
+                competition,
+                competitionName,
+                country,
+              })
+            }
+            aria-pressed={starred}
+            aria-label={starred ? `Remove ${teamInfo?.name ?? name} from my teams` : `Add ${teamInfo?.name ?? name} to my teams`}
+            title={starred ? "Remove from my teams" : "Add to my teams"}
+            className="ml-auto shrink-0 rounded-lg p-2 transition hover:bg-[var(--surface-2)]"
+            style={{ color: starred ? "var(--brand)" : "var(--muted)" }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={starred ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -138,7 +164,7 @@ export function TeamView({
 
       {statsError && (
         <div className="tl-card flex items-center justify-between gap-3 p-4 text-sm" style={{ color: "var(--loss)" }}>
-          <span>Couldn't load stats: {statsErrorObj?.message}</span>
+          <span>No completed-season stats for this club in this competition — showing live preview + fixtures. Couldn't load stats: {statsErrorObj?.message}</span>
           <button
             className="rounded-[10px] px-3 py-1.5 text-xs font-bold"
             style={{ background: "var(--surface-3)", color: "var(--text)" }}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { CompareBar } from "./components/CompareBar";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FixturesView } from "./components/FixturesView";
 import { HeadToHeadPanel } from "./components/HeadToHeadPanel";
 import { InsightPanel } from "./components/InsightPanel";
@@ -60,7 +61,7 @@ function buildStatRows(a: TeamStats, b: TeamStats): StatRow[] {
     { label: "Attack", a: a.attackRating, b: b.attackRating },
     { label: "Defense", a: a.defenseRating, b: b.defenseRating },
     {
-      label: "Possession",
+      label: "Possession (est.)",
       a: a.possessionAvg,
       b: b.possessionAvg,
       displayA: `${a.possessionAvg}%`,
@@ -120,6 +121,10 @@ export default function App() {
     homeId: TeamId;
     awayId: TeamId;
   } | null>(null);
+  /** Event id of the tapped row, for pending feedback until slugs resolve. */
+  const [pendingEventId, setPendingEventId] = useState<number | null>(null);
+  /** Warmer notice when a row reroutes to a dashboard instead of a comparison. */
+  const [fallbackNotice, setFallbackNotice] = useState<string | null>(null);
 
   // A team opened from the header search: competition + preview slug.
   const [teamSelection, setTeamSelection] = useState<{
@@ -206,6 +211,7 @@ export default function App() {
     const homeId = resolveTeam(teams, pendingCompare.homeName);
     const awayId = resolveTeam(teams, pendingCompare.awayName);
     setPendingCompare(null);
+    setPendingEventId(null);
 
     if (homeId && awayId) {
       setTeamA(homeId);
@@ -220,6 +226,10 @@ export default function App() {
     // standings (the away side when only it fails, else the home side), so the
     // click is never a dead end.
     const fallbackId = homeId ? pendingCompare.awayId : pendingCompare.homeId;
+    const fallbackName = homeId ? pendingCompare.awayName : pendingCompare.homeName;
+    setFallbackNotice(
+      `No comparison data for ${fallbackName} yet — showing their dashboard instead.`
+    );
     setCompetition(pendingCompare.competition);
     setTeamSelection({
       competition: pendingCompare.competition,
@@ -330,6 +340,8 @@ export default function App() {
 
   /** Any match row -> compare both clubs, once the league's standings resolve. */
   function handleNavigate(fixture: Fixture) {
+    setFallbackNotice(null);
+    setPendingEventId(fixture.eventId);
     setPendingCompare({
       competition: fixture.competition,
       homeName: fixture.homeTeam.name,
@@ -342,6 +354,8 @@ export default function App() {
   /** Search result -> the team's dashboard (Preview / Stats / Matches). */
   function handleSelectTeam(result: TeamSearchResult) {
     setHasCompared(false);
+    setFallbackNotice(null);
+    setPendingEventId(null);
     setTeamA("");
     setTeamB("");
     setPendingCompare(null);
@@ -353,6 +367,8 @@ export default function App() {
 
   function handleBackToFixtures() {
     setTeamSelection(null);
+    setFallbackNotice(null);
+    setPendingEventId(null);
     setMode("fixtures");
     setHasCompared(false);
     setTeamA("");
@@ -362,6 +378,8 @@ export default function App() {
   /** Logo click -> the all-leagues fixtures homepage. */
   function handleHome() {
     setTeamSelection(null);
+    setFallbackNotice(null);
+    setPendingEventId(null);
     setHasCompared(false);
     setTeamA("");
     setTeamB("");
@@ -396,7 +414,7 @@ export default function App() {
               <span style={{ color: "var(--brand)" }}>IQ</span>
             </button>
             <span className="text-sm font-medium text-[var(--muted)]">Data-backed football predictions</span>
-            <span className="ml-auto">
+            <span className="ml-auto flex min-w-0 flex-1 justify-end sm:flex-none sm:flex-initial">
               <TeamSearchBox onSelect={handleSelectTeam} />
             </span>
             <ThemeToggle theme={theme} onToggle={toggle} />
@@ -420,6 +438,7 @@ export default function App() {
 
       <main className="mx-auto max-w-4xl space-y-5 px-4 py-6">
         {mode === "fixtures" && (
+          <ErrorBoundary name="fixtures">
           <FixturesView
             fixtures={fixtures}
             isFetching={fixturesFetching}
@@ -432,10 +451,29 @@ export default function App() {
             competition={competition}
             onCompetitionChange={handleFixturesCompetitionChange}
             onNavigate={handleNavigate}
+            onSelectTeam={handleSelectTeam}
+            pendingEventId={pendingEventId}
           />
+          </ErrorBoundary>
         )}
 
         {mode === "team" && teamSelection && (
+          <ErrorBoundary name="team">
+          <>
+            {fallbackNotice && (
+              <div className="tl-card flex items-center justify-between gap-3 p-4 text-sm text-[var(--text)]" role="status">
+                <span>{fallbackNotice}</span>
+                <button
+                  type="button"
+                  aria-label="Dismiss notice"
+                  className="rounded-[10px] px-3 py-1.5 text-xs font-bold"
+                  style={{ background: "var(--surface-3)", color: "var(--text)" }}
+                  onClick={() => setFallbackNotice(null)}
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
           <TeamView
             competition={teamSelection.competition}
             team={teamSelection.team}
@@ -448,6 +486,8 @@ export default function App() {
             onBack={handleBackToFixtures}
             onNavigate={handleNavigate}
           />
+          </>
+          </ErrorBoundary>
         )}
 
         {mode === "compare" && !canCompare && (
@@ -494,9 +534,10 @@ export default function App() {
         {mode === "compare" && canCompare && isFetching && !report && <ReportSkeleton />}
 
         {report && (
+          <ErrorBoundary name="compare">
           <div key={reportKey} className="space-y-5">
             {report.validationIssues.length > 0 && (
-              <div className="tl-card border-l-4 p-4 text-sm" style={{ borderLeftColor: "var(--loss)" }}>
+              <div className="tl-card p-4 text-sm" style={{ borderColor: "var(--loss)" }}>
                 <p className="font-semibold" style={{ color: "var(--loss)" }}>
                   Some data is incomplete
                 </p>
@@ -515,13 +556,20 @@ export default function App() {
               />
             </div>
             <div className="tl-reveal tl-reveal-delay-1">
+              <InsightPanel
+                insight={report.insight}
+                generatedAt={report.generatedAt}
+                generatedBy={report.insightGeneratedBy}
+              />
+            </div>
+            <div>
               <StatComparison
                 rows={buildStatRows(report.teams.teamA.stats, report.teams.teamB.stats)}
                 teamAName={report.teams.teamA.stats.name}
                 teamBName={report.teams.teamB.stats.name}
               />
             </div>
-            <div className="tl-reveal tl-reveal-delay-1">
+            <div>
               <LineupPanel
                 teamAName={report.teams.teamA.stats.name}
                 teamBName={report.teams.teamB.stats.name}
@@ -531,7 +579,7 @@ export default function App() {
                 teamBInjuries={report.teams.teamB.injuries}
               />
             </div>
-            <div className="tl-reveal tl-reveal-delay-1">
+            <div>
               <HeadToHeadPanel
                 headToHead={report.headToHead}
                 teamA={report.intent.teamA}
@@ -539,20 +587,13 @@ export default function App() {
                 teamBName={report.teams.teamB.stats.name}
               />
             </div>
-            <div className="tl-reveal tl-reveal-delay-2">
-              <InsightPanel
-                insight={report.insight}
-                generatedAt={report.generatedAt}
-                generatedBy={report.insightGeneratedBy}
-              />
-            </div>
-            <div className="tl-reveal tl-reveal-delay-3">
+            <div>
               <RadarChart
                 labels={report.visualization.radar.labels}
                 datasets={report.visualization.radar.datasets}
               />
             </div>
-            <div className="tl-reveal tl-reveal-delay-4">
+            <div>
               <NewsList
                 teamAName={report.teams.teamA.stats.name}
                 teamBName={report.teams.teamB.stats.name}
@@ -561,6 +602,7 @@ export default function App() {
               />
             </div>
           </div>
+          </ErrorBoundary>
         )}
       </main>
     </div>

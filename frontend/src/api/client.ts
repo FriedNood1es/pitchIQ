@@ -63,6 +63,13 @@ export function fetchTeamStats(competition: string, name: string): Promise<TeamS
   );
 }
 
+/** Full standings table for a competition, ordered by position. */
+export function fetchStandings(competition: string): Promise<TeamStats[]> {
+  return getJson<TeamStats[]>(
+    `/api/standings?competition=${encodeURIComponent(competition)}`
+  );
+}
+
 export async function fetchComparison(
   competition: string,
   teamA: TeamId,

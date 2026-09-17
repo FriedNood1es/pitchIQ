@@ -1,6 +1,172 @@
 # PitchIQ — Next Steps
 
-_Last updated: 2026-08-10_
+_Last updated: 2026-09-17_
+
+## 8r. Sliding status-pill indicator ✅ DONE (2026-09-17)
+The green highlight now glides between All/Live/Finished/Scheduled instead of
+snapping. No new deps: an absolutely-positioned span in the (now `relative`)
+pills track, placed from the active button's `offsetLeft/offsetWidth` in a
+`useLayoutEffect` (pre-paint, so no glide on first load), `transform/width`
+transition for the glide, `ResizeObserver` to stay correct on resizes and font
+swaps. Buttons went transparent (`z-10`, text-only active/inactive colours).
+Reduced-motion snaps via the existing `index.css` block. Chips keep the
+instant swap (a slider would fight the scroller). Frontend build green, dev
+transform confirmed fresh.
+
+## 8q. Standings never fetched on first render ✅ FIXED (2026-09-17)
+Symptom: Standings section skeletoned forever in the focused view. Cause: the
+fetch lived in `toggleCollapse` (closed→open transition), but focused bands
+start open — the transition never fires. Fix: a priming `useEffect` on
+`[competition, collapsed, tables, tableErrors]` that fetches whenever the
+focused band is open and uncached (covers first render and re-expands);
+`toggleCollapse` is a pure collapse toggle again. Guards make re-runs no-ops.
+Frontend build green, dev transform confirmed fresh.
+
+## 8p. Focused band: stacked standings + batched paging ✅ DONE (2026-09-17)
+- **Tabs out:** the Matches/Table mini-tabs are gone. A focused league band
+  stacks date sections → Show more/fewer → full standings table. Overview
+  bands stay matches-only and never fetch.
+- **Fetch on expand:** opening a focused band primes its table (once per
+  competition, cached; skeletons + per-key errors unchanged). `tableBands`
+  state and `showTable` deleted.
+- **Batched paging:** `visibleCount` per band (default 20) replaces the
+  boolean expand — each click reveals the next 20, then flips to Show fewer
+  (resets to 20). Applies to overview and focused views via the same path;
+  the stepper still derives days from visible sections only.
+- Verified: frontend build green + dev-server transform confirmed fresh
+  (`showFewer` present, `showTable`/`tableBands` gone).
+
+## 8o. Landing declutter: sports strip gone, focused tables, 20-cap paging ✅ DONE (2026-09-17)
+- **Sports strip removed** (`App.tsx`): football-only per AGENTS.md, so the
+  Football-active/disabled-others nav is deleted; sticky container is
+  header-only again.
+- **Table tabs only when focused** (`FixturesView.tsx`): mini-tabs render only
+  in single-league view. Overview bands are matches-only, which also ends the
+  11-band standings-fetch fan-out (tabs are the sole fetch trigger).
+- **Counts gone everywhere:** band, sidebar-row and chip badges deleted;
+  `counts` memo and sidebar `counts`/`total` props removed.
+- **20/page paging:** `visibleGroups` slices each band to the first 20 matches
+  in display order (sections never split empty) with per-band "Show more
+  matches (N more)" ↔ "Show fewer" (`expandedLeagues`, reset on filter change).
+  Tables always show full; the stepper derives days from visible sections so
+  ‹ › never targets a hidden day. Both builds green.
+
+## 8n. Skipped Flashscore items included ✅ DONE (2026-09-17)
+Date stepper, MY TEAMS, standings tables, sports strip — all four land.
+- **Standings (backend):** `GET /api/standings?competition=` (`data/standings.ts`
+  + route in `routes/compare.ts`, `fetchStandings` client). Maps pinned-season
+  rows through `bsdRowToStats` (returns `TeamStats[]`, no new types); lives in
+  its own module because the agent already depends on `teamDirectory` (reverse
+  import would cycle). Mock mode returns `[]` → "No standings" note, never
+  invented rows. Verified live: 20 PL rows in 377ms.
+- **Table tabs:** each expanded band has Matches/Table mini-tabs; tables fetch
+  once per competition (cached in `tables`, per-key errors, skeleton rows while
+  loading). Full table (Pos, Team, P/W/D/L, GD signed, Pts).
+- **Date stepper:** ‹ day › pager in the pills card walks the loaded list's
+  distinct days (display order) and smooth-scrolls to each date section
+  (`scroll-mt`, `aria-live` label, auto scroll under reduced-motion). Resets on
+  filter change; hidden when a single day is loaded.
+- **MY TEAMS:** `useFavoriteTeams` (`localStorage`, keyed competition/id);
+  star toggle in the `TeamView` header; sidebar section opens the dashboard via
+  `onSelectTeam` (new `FixturesView` prop, `App` passes `handleSelectTeam`).
+  Unstar from the dashboard; sidebar rows navigate.
+- **Sports strip:** sticky sub-header nav — Football active, Basketball/Tennis/
+  Cricket disabled with honest "isn't covered yet" tooltips (no fake entries).
+- Both builds green (117 modules).
+
+## 8m. Flashscore-style landing (sidebar + bands + two-line rows) ✅ DONE (2026-09-17)
+Fixtures landing restructured after the Flashscore reference (full restyle +
+real pinning + hero kept), frontend-only.
+- **Sidebar** (`LeagueSidebar.tsx`, desktop `lg:` only): All-leagues entry,
+  pin-to-top sections with counts, click filters via the existing competition
+  state. Pins persist in `localStorage` (`usePinnedLeagues.ts`, JSON
+  try/catch). Mobile keeps the chips scroller (`lg:hidden`).
+- **League bands:** headers are full-bleed `surface-2` bands with a collapse
+  chevron (`aria-expanded`, session-only `Set` — revisits never hide matches).
+- **Two-line rows** (`MatchRow.tsx`): time column (FT/kickoff, LIVE+minute,
+  countdown+kickoff), home-over-away lines with right-aligned per-line scores
+  once played. `TeamView` inherits the look (shared component). Pending
+  spinner/`aria-busy` kept.
+- Filter card slimmed to pills-only (caption dropped, `role=group` kept).
+  Both builds green (116 modules).
+- **Non-goals:** date stepper, MY TEAMS/favorites, Standings links,
+  multi-sport strip.
+
+## 8l. Filter-card round-trip ✅ DONE (2026-09-17)
+An `/impeccable` subagent pass un-clumped the Matches buttons (full-width
+pills, wrapped chips, divider deleted) — read as worse on review (stretched
+pills, chips wall, lost structure). Rolled the three overcorrections back to
+the middle ground in `FixturesView.tsx`: pills keep the `gap-1 p-1` separation
+but are `flex-none` (compact unit, left-aligned under caption); league chips
+are a single scroll row again (sticky-"All" stays removed, so no overlap);
+hairline divider restored. Kept: stacked captions, group aria-labels, count
+badges, `rounded-xl`. Frontend build green.
+
+## 8l. Fixtures filter toolbar de-clump ✅ DONE (2026-09-17)
+Impeccable `layout` on `FixturesView.tsx` (detector clean before + after).
+Status segmented control was `inline-flex p-0.5` with gapless `px-3 py-1` buttons
+(cramped); league chips were a scroll-strip sharing one card + divider with the
+same pill language, so ~16 buttons blurred together. Now: status group gets
+`gap-1 p-1`, `rounded-xl`, `flex-1 sm:flex-none px-4 py-1.5` buttons on a
+label-aligned row; leagues `flex-wrap` (no scroll-strip, no fade mask); hairline
+divider deleted in favour of `space-y-5` proximity rhythm. Frontend-only, both
+builds green.
+
+## 8k. Audit fixes (14/20 Good) ✅ DONE (2026-09-17)
+Impeccable audit `frontend` scored 14/20 (Good), detector clean, integrity Pass.
+Fixed all 3 P1s + cheap P2s, frontend-only.
+- **Touch targets:** one global rule (`index.css`: `button,
+  input[type=search], [role=option]` get `min-height: 44px`) instead of N
+  one-off edits — chips, pills, toggles, retry/dismiss all comply, visuals
+  just gain padding.
+- **Reduced motion:** existing `reduce` block now also kills Tailwind
+  `animate-ping`/`animate-spin`; **light `--muted`** unified to `#5f6368`
+  (was two disagreeing values, one failing AA).
+- **Semantics:** search input is a real combobox (`role`, `aria-expanded`,
+  `aria-controls`); `IconSelect` wires `aria-activedescendant` via `useId`;
+  compare/team routes gained `h1`s (sr-only matchup title in `MatchHero`,
+  `h2`→`h1` in `TeamView`).
+- **Tokens:** new `--on-color` (white, all 3 themes) replaces `text-white`/
+  `bg-white`/`#fff` escapes in LIVE badge, monograms, form pills; LIVE red is
+  now `var(--loss)`.
+- **Deferred:** shared live clock + virtualization (`ponytail:` note in
+  `MatchRow`) — unmeasured, few live games. Both builds green.
+
+## 8j. Homepage critique fixes (26/40 → follow-ups) ✅ DONE (2026-09-17)
+Impeccable critique `fixturesview-tsx` scored 26/40 (Acceptable). Shipped the
+cheap, high-value half; skipped per-row xG/form signals (needs backend + design).
+- **Silent reroute → notice:** `App.tsx` keeps a `fallbackNotice` ("No comparison
+  data for X yet — showing their dashboard instead", dismissible `role=status`)
+  when a row falls through to a team dashboard. Cleared on navigate/home/search.
+- **Row pending state:** `pendingEventId` (BSD `eventId: number`) flows
+  App → FixturesView → MatchRow; tapped row shows spinner, `aria-busy`,
+  `disabled` (no double-taps), "Loading comparison…" title.
+- **League strip orientation:** sticky "All leagues" chip, match-count badges on
+  every chip + league header (from loaded fixtures), tooltips; thumb-first rows
+  (`min-h-48px`, `py-3`, 18px chevron, finished `opacity-80`).
+- **Search/header 360px:** input `w-full max-w-14rem`, dropdown `left-0 right-0`
+  on mobile, 1-char hint ("need at least 2 characters"), warmer no-result copy.
+- **Onboard:** hero gained one-line monogram/countdown explainer. No backend,
+  no CSS, no routing changes. Both builds green.
+
+## 8i. Homepage: hero + league chips + row affordance ✅ DONE (2026-09-17)
+First-run gate was high: guidance was one muted paragraph, leagues hid in a
+dropdown, rows looked static. FixturesView now opens with a hero ("Pick a
+match. Get a data-backed prediction." + 1-2-3 strip), the competition
+dropdown is a scrollable one-tap chip row (flags, `aria-pressed`, active =
+brand), MatchRow gained a chevron hover affordance + finished-row dimming,
+and empty states are per-filter. Tokens/motion reuse `index.css`
+(   `tl-card`, `tl-reveal`); no backend or routing changes. Both builds green.
+   Follow-up: filter card rebuilt as one labeled panel (Matches: pills /
+   League: chips in-card with `min-w-0 flex-1` scroller, unselected chips on
+   `surface-2` so they read on the card); per-filter empty states kept.
+
+## 8h. Critique fixes: verdict-first report ✅ DONE (2026-09-15)
+Impeccable critique `frontend-src-app-tsx` scored 24/40 (Acceptable). Fixed top 3:
+Insight promoted under MatchHero as verdict, News collapsed to native details,
+single reveal moment (hero+insight only), `border-l-4/2` accents cut to 1px
+(detector clean), Possession relabeled `(est.)` with estimate tooltip,
+TeamView stats-404 explains pinned-vs-live fallback. Builds green.
 
 Suggested follow-up work, roughly in order of value-for-effort.
 

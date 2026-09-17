@@ -40,7 +40,7 @@ function NewsEntry({ item }: { item: NewsItem }) {
 
   return (
     <li
-      className="border-l-2 pl-3 text-sm"
+      className="border-l pl-3 text-sm"
       style={{ borderColor: "var(--border)" }}
     >
       {item.url ? (
@@ -89,12 +89,12 @@ function NewsColumn({
 
 export function NewsList({ teamAName, teamBName, teamANews, teamBNews }: Props) {
   return (
-    <div className="tl-card p-5">
-      <h2 className="tl-card-title mb-3">Latest News</h2>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    <details className="tl-card px-5 py-4" open>
+      <summary className="tl-card-title cursor-pointer">Latest News</summary>
+      <div className="mt-3 grid grid-cols-1 gap-6 sm:grid-cols-2">
         <NewsColumn teamName={teamAName} seriesColor="var(--team-a)" items={teamANews} />
         <NewsColumn teamName={teamBName} seriesColor="var(--team-b)" items={teamBNews} />
       </div>
-    </div>
+    </details>
   );
 }

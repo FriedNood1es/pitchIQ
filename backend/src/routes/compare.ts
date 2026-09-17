@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { COMPETITIONS, getCompetition } from "../data/competitions";
+import { listStandings } from "../data/standings";
 import { listTeams } from "../data/teamDirectory";
 import { createLLM } from "../llm/llmClient";
 import { runCompareOrchestrator } from "../orchestrator/compareOrchestrator";
@@ -24,6 +25,20 @@ router.get("/teams", async (req, res) => {
     res.json(await listTeams(competition));
   } catch (err) {
     res.status(502).json({ error: `Failed to load teams: ${(err as Error).message}` });
+  }
+});
+
+/** Full standings table for a competition, ordered by position. */
+router.get("/standings", async (req, res) => {
+  const competition = (req.query.competition as string) ?? COMPETITIONS[0].id;
+  if (!getCompetition(competition)) {
+    res.status(400).json({ error: `Unknown competition: ${competition}` });
+    return;
+  }
+  try {
+    res.json(await listStandings(competition));
+  } catch (err) {
+    res.status(502).json({ error: `Failed to load standings: ${(err as Error).message}` });
   }
 });
 

@@ -23,6 +23,7 @@
   --muted: #8b8f98;
   --brand: #17c964; /* pitch green — PitchIQ accent, used sparingly */
   --brand-ink: #052e16;
+  --on-color: #ffffff; /* text on saturated badges/pills (LIVE, monograms, form) */
   --team-a: #3987e5; /* validated categorical slot 1 (dark) */
   --team-b: #e66767; /* validated categorical slot 6 (dark) */
   --good: #23c552;
@@ -44,6 +45,7 @@
     --muted: #5f6368;
     --brand: #0f9d58;
     --brand-ink: #ffffff;
+    --on-color: #ffffff;
     --team-a: #2a78d6;
     --team-b: #e34948;
     --good: #0ca30c;
@@ -62,9 +64,11 @@
   --ring: rgba(11, 11, 11, 0.18);
   --text: #0b1220;
   --text-2: #52565f;
-  --muted: #898781;
+  /* Same value as the OS-follows-light block above — one light muted, not two. */
+  --muted: #5f6368;
   --brand: #0f9d58;
   --brand-ink: #ffffff;
+  --on-color: #ffffff;
   --team-a: #2a78d6;
   --team-b: #e34948;
   --good: #0ca30c;
@@ -137,12 +141,59 @@ body {
   border-color: var(--brand);
 }
 
+/* Horizontally scrollable league chips — snap on touch, scrollbar hidden
+   there (swipe works). On mouse devices the scrollbar stays visible, since
+   there is otherwise no way to scroll the row. */
+.league-chips {
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+.league-chips::-webkit-scrollbar {
+  display: none;
+}
+.league-chips > * {
+  scroll-snap-align: start;
+}
+@media (hover: hover) and (pointer: fine) {
+  .league-chips {
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-3) transparent;
+    /* Fade on the right edge signals there is more to scroll to. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+  }
+  .league-chips::-webkit-scrollbar {
+    display: block;
+    height: 6px;
+  }
+  .league-chips::-webkit-scrollbar-thumb {
+    background: var(--surface-3);
+    border-radius: 3px;
+  }
+  .league-chips::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* Sliding active-pill backdrop (status filter) — position set from JS measurement. */
+.tl-slide-indicator {
+  transition: transform 0.25s ease, width 0.25s ease;
+}
+
 /* Accessible focus ring for every interactive control */
 button:focus-visible,
 a:focus-visible,
+input:focus-visible,
 select:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
+}
+
+/* WCAG 2.5.8: every pointer target is at least 44px tall. Button content
+   centers vertically by default, so short controls just gain padding. */
+button,
+input[type="search"],
+[role="option"] {
+  min-height: 44px;
 }
 
 /* Form W/D/L pill */
@@ -155,7 +206,7 @@ select:focus-visible {
   border-radius: 6px;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--on-color);
   font-variant-numeric: tabular-nums;
 }
 
@@ -207,5 +258,13 @@ select:focus-visible {
   }
   .tl-skeleton {
     animation: none;
+  }
+  /* Tailwind's ping/spin live outside our tokens — stillness wins here too. */
+  .animate-ping,
+  .animate-spin {
+    animation: none;
+  }
+  .tl-slide-indicator {
+    transition: none;
   }
 }

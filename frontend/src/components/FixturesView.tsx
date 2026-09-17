@@ -1,8 +1,16 @@
-import { useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { fetchStandings } from "../api/client";
 import { CountryFlag } from "./CountryFlag";
-import { IconSelect } from "./IconSelect";
+import { LeagueSidebar } from "./LeagueSidebar";
 import { MatchRow } from "./MatchRow";
-import { Competition, Fixture, FixturesStatus } from "../types";
+import { TeamCrest } from "./TeamCrest";
+import {
+  Competition,
+  Fixture,
+  FixturesStatus,
+  TeamSearchResult,
+  TeamStats,
+} from "../types";
 
 interface Props {
   fixtures?: Fixture[];
@@ -17,6 +25,9 @@ interface Props {
   competition: string;
   onCompetitionChange: (competition: string) => void;
   onNavigate: (fixture: Fixture) => void;
+  onSelectTeam: (team: TeamSearchResult) => void;
+  /** Event id of the row currently resolving standings slugs (pending feedback). */
+  pendingEventId?: number | null;
 }
 
 const STATUSES: { id: FixturesStatus; label: string }[] = [
@@ -25,6 +36,13 @@ const STATUSES: { id: FixturesStatus; label: string }[] = [
   { id: "finished", label: "Finished" },
   { id: "scheduled", label: "Scheduled" },
 ];
+
+const EMPTY_COPY: Record<FixturesStatus, string> = {
+  all: "No matches match these filters — try another league.",
+  live: "No live matches right now — check Scheduled for what's next.",
+  finished: "No finished matches under these filters yet.",
+  scheduled: "Nothing scheduled under these filters — try another league.",
+};
 
 function dayLabel(iso: string): string {
   const d = new Date(iso);
@@ -61,17 +79,90 @@ function groupByDate(fixtures: Fixture[], status: FixturesStatus) {
     .map(([key, list]) => ({ date: key, fixtures: list }));
 }
 
-function DateSection({ label, fixtures, onNavigate }: { label: string; fixtures: Fixture[]; onNavigate: (f: Fixture) => void }) {
+function DateSection({
+  label,
+  fixtures,
+  onNavigate,
+  pendingEventId,
+  anchor,
+}: {
+  label: string;
+  fixtures: Fixture[];
+  onNavigate: (f: Fixture) => void;
+  pendingEventId?: number | null;
+  /** Scroll target id for the date stepper (undefined = not steppable). */
+  anchor?: string;
+}) {
   return (
-    <div>
+    <div id={anchor} className="scroll-mt-4">
       <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
         {label}
       </h3>
       <div className="mt-1.5 space-y-1">
         {fixtures.map((f) => (
-          <MatchRow key={f.eventId} fixture={f} onClick={() => onNavigate(f)} />
+          <MatchRow
+            key={f.eventId}
+            fixture={f}
+            pending={pendingEventId === f.eventId}
+            onClick={() => onNavigate(f)}
+          />
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Pinned-season table for a league band: pos, record, goals, points. */
+function StandingsTable({ rows }: { rows: TeamStats[] }) {
+  const pts = (t: TeamStats) => t.wins * 3 + t.draws;
+  if (rows.length === 0) {
+    return (
+      <p className="px-1 py-3 text-center text-sm text-[var(--muted)]">
+        No standings for this competition yet.
+      </p>
+    );
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-xs uppercase tracking-wide text-[var(--muted)]">
+            <th scope="col" className="w-8 px-2 py-1 text-right font-semibold">#</th>
+            <th scope="col" className="px-2 py-1 text-left font-semibold">Team</th>
+            {(["P", "W", "D", "L", "GD", "Pts"] as const).map((h) => (
+              <th key={h} scope="col" className="px-1.5 py-1 text-center font-semibold">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((t) => {
+            const gd = t.goalsFor - t.goalsAgainst;
+            return (
+              <tr key={t.teamId} className="border-t" style={{ borderColor: "var(--border)" }}>
+                <td className="px-2 py-1.5 text-right tabular-nums text-[var(--muted)]">
+                  {t.standingPosition}
+                </td>
+                <td className="max-w-44 px-2 py-1.5">
+                  <span className="flex items-center gap-2">
+                    <TeamCrest name={t.name} crestColor={t.crestColor} size={18} />
+                    <span className="truncate font-semibold text-[var(--text)]">{t.name}</span>
+                  </span>
+                </td>
+                <td className="px-1.5 py-1.5 text-center tabular-nums text-[var(--text-2)]">{t.played}</td>
+                <td className="px-1.5 py-1.5 text-center tabular-nums text-[var(--text-2)]">{t.wins}</td>
+                <td className="px-1.5 py-1.5 text-center tabular-nums text-[var(--text-2)]">{t.draws}</td>
+                <td className="px-1.5 py-1.5 text-center tabular-nums text-[var(--text-2)]">{t.losses}</td>
+                <td className="px-1.5 py-1.5 text-center tabular-nums text-[var(--text-2)]">
+                  {gd > 0 ? `+${gd}` : gd}
+                </td>
+                <td className="px-1.5 py-1.5 text-center font-bold tabular-nums text-[var(--text)]">
+                  {pts(t)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -88,6 +179,8 @@ export function FixturesView({
   competition,
   onCompetitionChange,
   onNavigate,
+  onSelectTeam,
+  pendingEventId,
 }: Props) {
   // All leagues -> group by league, then date; one league -> date sections only.
   const groups = useMemo(() => {
@@ -121,33 +214,194 @@ export function FixturesView({
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [fixtures, competition, competitions, status]);
 
-  const leagueOptions = [
-    { id: "", label: "All leagues" },
-    ...competitions.map((c) => ({
-      id: c.id,
-      label: c.name,
-      icon: <CountryFlag country={c.country} />,
-    })),
+  const leagues = [
+    { id: "", name: "All leagues", country: "" },
+    ...competitions.map((c) => ({ id: c.id, name: c.name, country: c.country })),
   ];
+
+  // Bands page matches in batches of PAGE_SIZE; each Show more click
+  // reveals the next batch, Show fewer resets to the first.
+  const PAGE_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState<Record<string, number>>({});
+  const budget = (key: string) => visibleCount[key] ?? PAGE_SIZE;
+  function showMore(key: string) {
+    setVisibleCount((prev) => ({ ...prev, [key]: budget(key) + PAGE_SIZE }));
+  }
+  function showFewer(key: string) {
+    setVisibleCount((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }
+
+  // Visible date sections per band: first budget(matches) in display order,
+  // sections never split empty. `hidden` counts what's behind Show more.
+  const visibleGroups = useMemo(
+    () =>
+      groups.map((g) => {
+        const total = g.dates.reduce((n, d) => n + d.fixtures.length, 0);
+        const limit = visibleCount[g.key] ?? PAGE_SIZE;
+        let shown = 0;
+        const dates = [];
+        for (const d of g.dates) {
+          if (shown >= limit) break;
+          const slice = d.fixtures.slice(0, limit - shown);
+          dates.push({ date: d.date, fixtures: slice });
+          shown += slice.length;
+        }
+        return { ...g, total, hidden: total - shown, dates };
+      }),
+    [groups, visibleCount]
+  );
+
+  // Collapsed league bands — session-only, so a revisit never hides matches.
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  function toggleCollapse(key: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  // Distinct days in the visible sections, in display order — the stepper
+  // walks these and scrolls to each date section. Buckets are single days,
+  // so ordering by first kickoff orders the days.
+  const days = useMemo(() => {
+    const firstSeen = new Map<string, string>();
+    for (const g of visibleGroups) {
+      for (const d of g.dates) {
+        for (const f of d.fixtures) {
+          const key = new Date(f.date).toDateString();
+          if (!firstSeen.has(key)) firstSeen.set(key, f.date);
+        }
+      }
+    }
+    const keys = [...firstSeen.keys()];
+    const time = (k: string) => new Date(firstSeen.get(k)!).getTime();
+    keys.sort((a, b) => (status === "finished" ? time(b) - time(a) : time(a) - time(b)));
+    return keys.map((key) => ({ key, iso: firstSeen.get(key)! }));
+  }, [visibleGroups, status]);
+  const dayIndex = useMemo(() => new Map(days.map((d, i) => [d.key, i])), [days]);
+  const [dayIdx, setDayIdx] = useState(0);
+  useEffect(() => {
+    setDayIdx(0);
+    setVisibleCount({});
+  }, [competition, status]);
+
+  // Sliding active-pill backdrop: measured off the active button so the
+  // green highlight glides between pills instead of snapping.
+  const trackRef = useRef<HTMLDivElement>(null);
+  const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [indicator, setIndicator] = useState({ x: 0, w: 0 });
+  function measureIndicator() {
+    const el = btnRefs.current[STATUSES.findIndex((s) => s.id === status)];
+    if (el) setIndicator({ x: el.offsetLeft, w: el.offsetWidth });
+  }
+  // Pre-paint, so first paint already sits under the active pill (no glide in).
+  useLayoutEffect(measureIndicator, [status]);
+  useEffect(() => {
+    const ro = new ResizeObserver(() => measureIndicator());
+    if (trackRef.current) ro.observe(trackRef.current);
+    return () => ro.disconnect();
+  }, []);
+  const safeIdx = days.length === 0 ? 0 : Math.min(dayIdx, days.length - 1);
+  function stepTo(i: number) {
+    setDayIdx(i);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document
+      .getElementById(`fixtures-day-${i}`)
+      ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+
+  // Standings tables, fetched once per competition when its focused band
+  // is open (including on first render — bands start expanded, so there is
+  // no open-transition to hook the fetch onto). A band showing the section
+  // without cached rows is loading.
+  const [tables, setTables] = useState<Record<string, TeamStats[]>>({});
+  const [tableErrors, setTableErrors] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!competition || collapsed.has(competition)) return;
+    if (tables[competition] || tableErrors[competition]) return;
+    fetchStandings(competition).then(
+      (rows) => setTables((prev) => ({ ...prev, [competition]: rows })),
+      (err) => setTableErrors((prev) => ({ ...prev, [competition]: (err as Error).message }))
+    );
+  }, [competition, collapsed, tables, tableErrors]);
 
   return (
     <div className="space-y-5">
-      <p className="px-1 text-sm text-[var(--muted)]">
-        Pick any match to compare form, xG, head-to-head and predicted lineups — data-backed
-        insight to guide your prediction.
-      </p>
-      <div className="tl-card flex flex-wrap items-center gap-3 p-3">
-        <div className="flex rounded-lg border p-0.5" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
-          {STATUSES.map((s) => (
+      <section className="tl-card tl-reveal p-5">
+        <h1 className="text-xl font-extrabold tracking-tight text-[var(--text)]">
+          Pick a match. Get a data-backed prediction.
+        </h1>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Form, xG, head-to-head and predicted lineups — insight to guide your prediction.
+        </p>
+        <p className="mt-1 text-xs text-[var(--muted)]">
+          Coloured initials stand in for club badges · the countdown is time to
+          kickoff · tap any row to compare the two clubs.
+        </p>
+        <ol className="mt-4 grid gap-2 sm:grid-cols-3">
+          {[
+            ["1", "Pick a match", "Tap any fixture below"],
+            ["2", "Compare the clubs", "Stats, H2H, injuries, lineups"],
+            ["3", "Read the insight", "AI verdict on the matchup"],
+          ].map(([n, title, sub]) => (
+            <li
+              key={n}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+              style={{ background: "var(--surface-2)" }}
+            >
+              <span
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-extrabold"
+                style={{ background: "var(--brand)", color: "var(--brand-ink)" }}
+              >
+                {n}
+              </span>
+              <span>
+                <span className="block text-sm font-bold text-[var(--text)]">{title}</span>
+                <span className="block text-xs text-[var(--muted)]">{sub}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
+      <div className="flex items-start gap-5">
+        <LeagueSidebar
+          competitions={competitions}
+          competition={competition}
+          onCompetitionChange={onCompetitionChange}
+          onSelectTeam={onSelectTeam}
+        />
+        <div className="min-w-0 flex-1 space-y-5">
+      <div className="tl-card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div ref={trackRef} className="relative inline-flex gap-1 rounded-xl border p-1" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }} role="group" aria-label="Match status">
+          <span
+            aria-hidden="true"
+            className="tl-slide-indicator absolute bottom-1 left-0 top-1 rounded-lg"
+            style={{
+              background: "var(--brand)",
+              width: indicator.w,
+              transform: `translateX(${indicator.x}px)`,
+            }}
+          />
+          {STATUSES.map((s, i) => (
             <button
               key={s.id}
+              ref={(el) => {
+                btnRefs.current[i] = el;
+              }}
               type="button"
               onClick={() => onStatusChange(s.id)}
               aria-pressed={status === s.id}
-              className="rounded-md px-3 py-1 text-sm font-bold transition"
+              className="relative z-10 rounded-lg px-4 py-1.5 text-sm font-bold transition"
               style={
                 status === s.id
-                  ? { background: "var(--brand)", color: "var(--brand-ink)" }
+                  ? { color: "var(--brand-ink)" }
                   : { color: "var(--text-2)" }
               }
             >
@@ -155,14 +409,71 @@ export function FixturesView({
             </button>
           ))}
         </div>
-        <IconSelect
-          label="Competition"
-          size="sm"
-          className="w-48 sm:ml-auto"
-          options={leagueOptions}
-          value={competition}
-          onChange={onCompetitionChange}
-        />
+        {days.length > 1 && (
+          <div className="flex items-center gap-1" role="group" aria-label="Jump to day">
+            <button
+              type="button"
+              onClick={() => stepTo(safeIdx - 1)}
+              disabled={safeIdx === 0}
+              aria-label="Previous day"
+              className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
+            >
+              ‹
+            </button>
+            <span aria-live="polite" className="min-w-24 text-center text-sm font-bold text-[var(--text)]">
+              {dayLabel(days[safeIdx].iso)}
+            </span>
+            <button
+              type="button"
+              onClick={() => stepTo(safeIdx + 1)}
+              disabled={safeIdx === days.length - 1}
+              aria-label="Next day"
+              className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
+            >
+              ›
+            </button>
+          </div>
+        )}
+        </div>
+        <div className="mt-4 space-y-2.5 lg:hidden">
+          <div aria-hidden="true" style={{ borderTop: "1px solid var(--border)" }} />
+          <span className="tl-card-title block">League</span>
+          <div
+            className="league-chips flex min-w-0 gap-2 overflow-x-auto pb-1"
+            role="group"
+            aria-label="Competitions"
+          >
+            {leagues.map((l) => {
+              const active = competition === l.id;
+              return (
+                <button
+                  key={l.id || "all"}
+                  type="button"
+                  onClick={() => onCompetitionChange(l.id)}
+                  aria-pressed={active}
+                  title={l.id ? `Show ${l.name} matches` : "Show matches from all leagues"}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-bold transition"
+                  style={
+                    active
+                      ? {
+                          background: "var(--brand)",
+                          borderColor: "var(--brand)",
+                          color: "var(--brand-ink)",
+                        }
+                      : {
+                          background: "var(--surface-2)",
+                          borderColor: "var(--border)",
+                          color: "var(--text-2)",
+                        }
+                  }
+                >
+                  {l.country ? <CountryFlag country={l.country} width={18} /> : null}
+                  {l.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {isError && (
@@ -188,32 +499,96 @@ export function FixturesView({
 
       {!isError && fixtures && fixtures.length === 0 && (
         <div className="tl-card p-5 text-sm text-[var(--muted)]">
-          No matches match these filters.
+          {EMPTY_COPY[status]}
         </div>
       )}
 
       {!isError && fixtures && fixtures.length > 0 && (
         <div className="space-y-6">
-          {groups.map((league) => (
-            <div key={league.key}>
-              <div className="mb-2 flex items-center gap-2 px-1">
-                <CountryFlag country={league.country} />
-                <h2 className="text-sm font-bold text-[var(--text)]">{league.name}</h2>
-              </div>
-              <div className="space-y-4">
-                {league.dates.map((d) => (
-                  <DateSection
-                    key={d.date}
-                    label={dayLabel(d.fixtures[0].date)}
-                    fixtures={d.fixtures}
-                    onNavigate={onNavigate}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+          {visibleGroups.map((league) => {
+            const shut = collapsed.has(league.key);
+            // The standings table stacks below the matches only in the
+            // focused league view — in the overview it would repeat in all
+            // 11 bands and fetch 11 tables.
+            const focused = Boolean(competition);
+            const fullyShown = league.hidden === 0 && league.total > PAGE_SIZE;
+            return (
+              <section key={league.key} aria-label={league.name}>
+                <button
+                  type="button"
+                  onClick={() => toggleCollapse(league.key)}
+                  aria-expanded={!shut}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-[var(--surface-3)]"
+                  style={{ background: "var(--surface-2)" }}
+                >
+                  <CountryFlag country={league.country} />
+                  <span className="truncate text-sm font-bold text-[var(--text)]">
+                    {league.name}
+                  </span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={`ml-auto shrink-0 text-[var(--muted)] transition ${shut ? "" : "rotate-180"}`}>
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                {!shut && (
+                  <div className="mt-2 space-y-4">
+                    {league.dates.map((d) => (
+                      <DateSection
+                        key={d.date}
+                        label={dayLabel(d.fixtures[0].date)}
+                        fixtures={d.fixtures}
+                        onNavigate={onNavigate}
+                        pendingEventId={pendingEventId}
+                        anchor={
+                          dayIndex.get(d.date) === undefined
+                            ? undefined
+                            : `fixtures-day-${dayIndex.get(d.date)}`
+                        }
+                      />
+                    ))}
+                    {(league.hidden > 0 || fullyShown) && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          league.hidden > 0 ? showMore(league.key) : showFewer(league.key)
+                        }
+                        aria-expanded={league.hidden === 0}
+                        className="w-full rounded-lg border px-3 py-1.5 text-sm font-bold transition hover:bg-[var(--surface-2)]"
+                        style={{ borderColor: "var(--border)", color: "var(--text-2)" }}
+                      >
+                        {league.hidden > 0
+                          ? `Show more matches (${league.hidden} more)`
+                          : "Show fewer matches"}
+                      </button>
+                    )}
+                    {focused && (
+                      <div>
+                        <span className="tl-card-title block px-1">Standings</span>
+                        <div className="mt-1.5">
+                          {tables[league.key] ? (
+                            <StandingsTable rows={tables[league.key]} />
+                          ) : tableErrors[league.key] ? (
+                            <p className="px-1 py-3 text-center text-sm" style={{ color: "var(--loss)" }}>
+                              Couldn't load the table: {tableErrors[league.key]}
+                            </p>
+                          ) : (
+                            <div className="space-y-2 py-1">
+                              {Array.from({ length: 5 }, (_, i) => (
+                                <div key={i} className="tl-skeleton h-7" style={{ width: `${96 - i * 6}%` }} />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

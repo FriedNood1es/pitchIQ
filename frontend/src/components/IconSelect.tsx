@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useId, useRef, useState } from "react";
 
 export interface SelectOption {
   id: string;
@@ -34,6 +34,7 @@ export function IconSelect({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const typeAhead = useRef({ query: "", at: 0 });
@@ -129,6 +130,7 @@ export function IconSelect({
         onKeyDown={onKeyDown}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-controls={listId}
         aria-label={label}
         className={`tl-field flex w-full items-center gap-2 text-left disabled:opacity-50 ${
           size === "sm" ? "px-2.5 py-1.5 text-[0.82rem]" : ""
@@ -146,8 +148,10 @@ export function IconSelect({
       {open && (
         <ul
           ref={listRef}
+          id={listId}
           role="listbox"
           aria-label={label}
+          aria-activedescendant={`${listId}-opt-${activeIndex}`}
           tabIndex={-1}
           onKeyDown={onKeyDown}
           className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface-2)] py-1 shadow-xl"
@@ -155,6 +159,7 @@ export function IconSelect({
           {options.map((option, i) => (
             <li
               key={option.id}
+              id={`${listId}-opt-${i}`}
               role="option"
               aria-selected={option.id === value}
               onMouseEnter={() => setActiveIndex(i)}

@@ -27,7 +27,10 @@ function Row({ row }: { row: StatRow }) {
     <div className="py-2.5">
       <div className="mb-1.5 flex items-center justify-between">
         <span className={valueClass(aLeads)}>{row.displayA ?? Math.round(row.a)}</span>
-        <span className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+        <span
+          className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]"
+          title={row.label.includes("(est.)") ? "Estimated from points/game — no live possession feed" : undefined}
+        >
           {row.label}
         </span>
         <span className={valueClass(bLeads)}>{row.displayB ?? Math.round(row.b)}</span>
