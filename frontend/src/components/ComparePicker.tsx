@@ -54,7 +54,7 @@ export function ComparePicker({
             label="Home team"
             size="sm"
             className="min-w-40 flex-1"
-            options={buildTeamOptions(teams)}
+            options={buildTeamOptions(teams, competition)}
             value={teamA}
             disabled={disabled}
             onChange={onChangeTeamA}
@@ -64,7 +64,7 @@ export function ComparePicker({
             label="Away team"
             size="sm"
             className="min-w-40 flex-1"
-            options={buildTeamOptions(teams)}
+            options={buildTeamOptions(teams, competition)}
             value={teamB}
             disabled={disabled}
             onChange={onChangeTeamB}

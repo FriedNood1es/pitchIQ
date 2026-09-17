@@ -53,15 +53,17 @@ function LiveCell({ date }: { date: string }) {
 function TeamLine({
   name,
   crestColor,
+  competition,
   score,
 }: {
   name: string;
   crestColor: string;
+  competition: string;
   score?: number;
 }) {
   return (
     <span className="flex min-w-0 items-center gap-2">
-      <TeamCrest name={name} crestColor={crestColor} size={20} />
+      <TeamCrest name={name} crestColor={crestColor} competition={competition} size={20} />
       <span className="truncate text-sm font-semibold text-[var(--text)]">
         {name}
       </span>
@@ -120,11 +122,13 @@ export function MatchRow({
         <TeamLine
           name={fixture.homeTeam.name}
           crestColor={fixture.homeTeam.crestColor}
+          competition={fixture.competition}
           score={scored ? fixture.homeScore ?? 0 : undefined}
         />
         <TeamLine
           name={fixture.awayTeam.name}
           crestColor={fixture.awayTeam.crestColor}
+          competition={fixture.competition}
           score={scored ? fixture.awayScore ?? 0 : undefined}
         />
       </span>

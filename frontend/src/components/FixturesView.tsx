@@ -163,7 +163,7 @@ function DateSection({
 }
 
 /** Pinned-season table for a league band: pos, record, goals, points. */
-function StandingsTable({ rows }: { rows: TeamStats[] }) {
+function StandingsTable({ rows, competition }: { rows: TeamStats[]; competition: string }) {
   const pts = (t: TeamStats) => t.wins * 3 + t.draws;
   if (rows.length === 0) {
     return (
@@ -194,7 +194,7 @@ function StandingsTable({ rows }: { rows: TeamStats[] }) {
                 </td>
                 <td className="max-w-44 px-2 py-1.5">
                   <span className="flex items-center gap-2">
-                    <TeamCrest name={t.name} crestColor={t.crestColor} size={18} />
+                    <TeamCrest name={t.name} crestColor={t.crestColor} competition={competition} size={18} />
                     <span className="truncate font-semibold text-[var(--text)]">{t.name}</span>
                   </span>
                 </td>
@@ -762,7 +762,7 @@ export function FixturesView({
                         <span className="tl-card-title block px-1">Standings</span>
                         <div className="mt-1.5">
                           {tables[league.key] ? (
-                            <StandingsTable rows={tables[league.key]} />
+                            <StandingsTable rows={tables[league.key]} competition={league.key} />
                           ) : tableErrors[league.key] ? (
                             <p className="px-1 py-3 text-center text-sm" style={{ color: "var(--loss)" }}>
                               Couldn't load the table: {tableErrors[league.key]}

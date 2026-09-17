@@ -1,7 +1,12 @@
+import { useState } from "react";
+import { findCrestURL, useEspnTeams } from "../crests";
+
 interface Props {
   name: string;
   crestColor: string;
   size?: number;
+  /** Competition id for ESPN badge resolution — omitted keeps the monogram. */
+  competition?: string;
 }
 
 /** Club-type abbreviations carry no identity — "AFC Ajax" should read AJA, not AA. */
@@ -36,11 +41,16 @@ function initials(name: string): string {
  * The crest colour comes from `crestColor` (a per-club brand accent, with a
  * neutral slate fallback for clubs outside the mapped set).
  */
-export function TeamCrest({ name, crestColor, size = 22 }: Props) {
+export function TeamCrest({ name, crestColor, size = 22, competition }: Props) {
+  // Real badge over the monogram: the initials stay mounted underneath, so
+  // loading and failures degrade to the monogram with zero layout shift.
+  const teams = useEspnTeams(competition ?? "");
+  const url = competition && teams ? findCrestURL(teams, name) : undefined;
+  const [failed, setFailed] = useState(false);
   return (
     <span
       aria-hidden="true"
-      className="inline-flex shrink-0 items-center justify-center rounded-full font-bold text-[var(--on-color)]"
+      className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-bold text-[var(--on-color)]"
       style={{
         width: size,
         height: size,
@@ -51,6 +61,16 @@ export function TeamCrest({ name, crestColor, size = 22 }: Props) {
       }}
     >
       {initials(name)}
+      {url && !failed && (
+        <img
+          src={url}
+          alt=""
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className="absolute inset-0 h-full w-full"
+          style={{ background: crestColor, objectFit: "contain", padding: "8%" }}
+        />
+      )}
     </span>
   );
 }

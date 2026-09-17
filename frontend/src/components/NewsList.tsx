@@ -30,7 +30,6 @@ function NewsEntry({ item }: { item: NewsItem }) {
       <p className="font-medium text-[var(--text)]">
         {item.kind === "tweet" && (
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" className="mr-1.5 inline-block align-baseline text-[var(--muted)]">
-            <title>Club post on X</title>
             <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" />
           </svg>
         )}

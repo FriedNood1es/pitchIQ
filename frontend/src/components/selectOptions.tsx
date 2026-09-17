@@ -14,10 +14,10 @@ export function buildCompetitionOptions(
   }));
 }
 
-export function buildTeamOptions(teams: TeamSummary[]): SelectOption[] {
+export function buildTeamOptions(teams: TeamSummary[], competition?: string): SelectOption[] {
   return teams.map((t) => ({
     id: t.id,
     label: t.name,
-    icon: <TeamCrest name={t.name} crestColor={t.crestColor} />,
+    icon: <TeamCrest name={t.name} crestColor={t.crestColor} competition={competition} />,
   }));
 }

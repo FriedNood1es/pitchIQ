@@ -50,4 +50,4 @@ npm run build -w frontend  # tsc -b && vite build
 ## More docs
 
 - `AGENTS.md` — architecture, agent pipeline, data quirks and conventions.
-- `NEXT_STEPS.md` — the living changelog / roadmap.
+- `roadmap.md` — the living changelog / roadmap.

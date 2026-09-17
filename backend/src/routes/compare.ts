@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { COMPETITIONS, getCompetition } from "../data/competitions";
+import { espnCrests } from "../clients/espnClient";
 import { listStandings } from "../data/standings";
 import { listTeams } from "../data/teamDirectory";
 import { createLLM } from "../llm/llmClient";
@@ -25,6 +26,20 @@ router.get("/teams", async (req, res) => {
     res.json(await listTeams(competition));
   } catch (err) {
     res.status(502).json({ error: `Failed to load teams: ${(err as Error).message}` });
+  }
+});
+
+/** Club badges for a competition (empty when ESPN is unreachable). */
+router.get("/crests", async (req, res) => {
+  const competition = (req.query.competition as string) ?? COMPETITIONS[0].id;
+  if (!getCompetition(competition)) {
+    res.status(400).json({ error: `Unknown competition: ${competition}` });
+    return;
+  }
+  try {
+    res.json(await espnCrests(competition));
+  } catch (err) {
+    res.status(502).json({ error: `Failed to load crests: ${(err as Error).message}` });
   }
 });
 

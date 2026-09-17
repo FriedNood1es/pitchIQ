@@ -35,7 +35,9 @@ export class RemoteLLMClient implements LLMClient {
           { role: "user", content: prompt },
         ],
         temperature: 0.7,
-        max_tokens: 350,
+        // Reasoning models (e.g. gpt-oss) spend tokens thinking before
+        // answering — 350 starved the answer to "". Budget covers both.
+        max_tokens: 1500,
       }),
       signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
     });

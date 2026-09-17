@@ -85,7 +85,7 @@ export function LeagueSidebar({
               title={`${f.name} — open team dashboard`}
               className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left transition hover:bg-[var(--surface-2)]"
             >
-              <TeamCrest name={f.name} crestColor={f.crestColor} size={20} />
+              <TeamCrest name={f.name} crestColor={f.crestColor} competition={f.competition} size={20} />
               <span className="truncate text-sm font-semibold text-[var(--text-2)]">
                 {f.name}
               </span>

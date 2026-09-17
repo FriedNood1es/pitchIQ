@@ -24,6 +24,7 @@ function Row({ row }: { row: StatRow }) {
   const bPct = (row.b / max) * 100;
   const aLeads = row.a > row.b;
   const bLeads = row.b > row.a;
+  const trailOpacity = 0.75;
 
   const valueClass = (leads: boolean) =>
     `text-sm tabular-nums ${leads ? "font-bold text-[var(--text)]" : "font-medium text-[var(--text-2)]"}`;
@@ -52,13 +53,13 @@ function Row({ row }: { row: StatRow }) {
         <div className="flex-1 overflow-hidden rounded-l-full" style={{ background: "var(--surface-3)" }}>
           <div
             className="ml-auto h-full rounded-l-full"
-            style={{ width: `${aPct}%`, background: "var(--team-a)", opacity: aLeads ? 1 : 0.55 }}
+            style={{ width: `${aPct}%`, background: "var(--team-a)", opacity: aLeads ? 1 : trailOpacity }}
           />
         </div>
         <div className="flex-1 overflow-hidden rounded-r-full" style={{ background: "var(--surface-3)" }}>
           <div
             className="h-full rounded-r-full"
-            style={{ width: `${bPct}%`, background: "var(--team-b)", opacity: bLeads ? 1 : 0.55 }}
+            style={{ width: `${bPct}%`, background: "var(--team-b)", opacity: bLeads ? 1 : trailOpacity }}
           />
         </div>
       </div>

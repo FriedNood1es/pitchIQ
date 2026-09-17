@@ -6,6 +6,7 @@ import { TeamCrest } from "./TeamCrest";
 
 interface Props {
   competitionName: string;
+  competition: string;
   teamA: TeamStats;
   teamB: TeamStats;
   edge: DataEdge;
@@ -35,18 +36,20 @@ function TeamBlock({
   seriesColor,
   align,
   muted,
+  competition,
 }: {
   team: TeamStats;
   seriesColor: string;
   align: "start" | "end";
   /** Trailing side: name steps back, crest and numbers stay full. */
   muted: boolean;
+  competition: string;
 }) {
   const alignClass = align === "end" ? "items-end text-right" : "items-start text-left";
   return (
     <div className={`flex flex-1 flex-col gap-2 min-w-0 ${alignClass}`}>
       <div className={`flex items-center gap-2.5 ${align === "end" ? "flex-row-reverse" : ""}`}>
-        <TeamCrest name={team.name} crestColor={team.crestColor} size={32} />
+        <TeamCrest name={team.name} crestColor={team.crestColor} competition={competition} size={32} />
         <span
           className={`text-lg font-bold truncate ${muted ? "text-[var(--text-2)]" : "text-[var(--text)]"}`}
           title={team.name}
@@ -80,7 +83,7 @@ function TeamBlock({
  * with the top reasons beneath; anchor chips stick on desktop so the long
  * evidence scroll stays reachable.
  */
-export function MatchHero({ competitionName, teamA, teamB, edge }: Props) {
+export function MatchHero({ competitionName, competition, teamA, teamB, edge }: Props) {
   const leaderName =
     edge.leader === "A" ? teamA.name : edge.leader === "B" ? teamB.name : null;
   const leaderColor =
@@ -106,6 +109,7 @@ export function MatchHero({ competitionName, teamA, teamB, edge }: Props) {
           seriesColor="var(--team-a)"
           align="start"
           muted={edge.leader === "B"}
+          competition={competition}
         />
         <div
           className="flex flex-col items-center px-2 pt-1"
@@ -123,6 +127,7 @@ export function MatchHero({ competitionName, teamA, teamB, edge }: Props) {
           seriesColor="var(--team-b)"
           align="end"
           muted={edge.leader === "A"}
+          competition={competition}
         />
       </div>
       <p className="mt-3 text-center text-base font-extrabold text-[var(--text)]">

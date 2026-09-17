@@ -100,6 +100,7 @@ export function TeamSearchBox({ onSelect }: Props) {
                 <TeamCrest
                   name={r.name}
                   crestColor={r.crestColor}
+                  competition={r.competition}
                   size={20}
                 />
                 <span className="truncate text-sm font-semibold text-[var(--text)]">

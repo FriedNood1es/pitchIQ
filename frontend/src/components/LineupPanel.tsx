@@ -38,7 +38,7 @@ export function LineupSide({
   return (
     <div className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-bold text-[var(--text)]">{teamName}</h3>
+        <p className="text-sm font-bold text-[var(--text)]">{teamName}</p>
         {lineup && (
           <p className="shrink-0 text-xs tabular-nums text-[var(--muted)]">
             {lineup.formation}

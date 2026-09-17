@@ -119,6 +119,7 @@ export function TeamView({
           <TeamCrest
             name={teamInfo?.name ?? name}
             crestColor={teamInfo?.crestColor ?? "var(--surface-3)"}
+            competition={competition}
             size={44}
           />
           <div>

@@ -468,7 +468,21 @@ export default function App() {
         />
       )}
 
-      <main className="mx-auto max-w-4xl space-y-5 px-4 py-6">
+      <main
+        className="mx-auto max-w-4xl space-y-5 px-4 py-6"
+        aria-busy={mode === "compare" && isFetching}
+      >
+        {mode === "compare" && (
+          <p aria-live="polite" role="status" className="sr-only">
+            {isFetching
+              ? "Comparing teams…"
+              : isError
+                ? `Comparison failed: ${(error as Error)?.message ?? "unknown error"}`
+                : report
+                  ? "Comparison ready"
+                  : ""}
+          </p>
+        )}
         {mode === "fixtures" && (
           <ErrorBoundary name="fixtures">
           <FixturesView
@@ -584,6 +598,7 @@ export default function App() {
             <div className="tl-reveal">
               <MatchHero
                 competitionName={competitionName}
+                competition={report.intent.competition}
                 teamA={report.teams.teamA.stats}
                 teamB={report.teams.teamB.stats}
                 edge={computeEdge(report)}

@@ -36,6 +36,7 @@ export function IconSelect({
   const [activeIndex, setActiveIndex] = useState(0);
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const typeAhead = useRef({ query: "", at: 0 });
 
@@ -68,6 +69,7 @@ export function IconSelect({
     const option = options[index];
     if (option) onChange(option.id);
     setOpen(false);
+    triggerRef.current?.focus();
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
@@ -83,6 +85,7 @@ export function IconSelect({
       case "Escape":
         e.preventDefault();
         setOpen(false);
+        triggerRef.current?.focus();
         return;
       case "Enter":
       case " ":
@@ -125,6 +128,7 @@ export function IconSelect({
     <div ref={rootRef} className={`relative ${className}`}>
       <button
         type="button"
+        ref={triggerRef}
         disabled={disabled}
         onClick={() => (open ? setOpen(false) : openList())}
         onKeyDown={onKeyDown}

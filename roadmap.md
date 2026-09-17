@@ -1,6 +1,78 @@
-# PitchIQ — Next Steps
+# PitchIQ — Roadmap
 
 _Last updated: 2026-09-17_
+
+## OPEN — unfinished business
+- [ ] **Crest eyeball on an unblocked network.** Pipeline is verified to the
+  data source; badges vs monograms (and wrong-badge scan) still need eyes —
+  tether 5 min to warm caches, or check after deploy.
+- [ ] **Rotate the Groq key.** It lived in chat history, shell history, and
+  `.env` logs — rotate in the Groq console, update `backend/.env`.
+- [ ] **Commit the pile.** Uncommitted since `4bf86c7`: crest proxy
+  (`espnClient`, `/api/crests`, `crests.ts`, `TeamCrest` overlay + wiring),
+  Groq token budget, recent compare fixes. Commit before switching machines.
+- [ ] **Dark logo variant.** ESPN serves `500-dark/` artwork per team; prefer
+  it under the dark theme (needs theme-aware picking in `TeamCrest`).
+- [ ] **Decide on strays.** `frontend/src/icons/` (unreferenced SVG) and
+  `.impeccable/` (critique reports) are untracked — track, wire, or delete.
+- [ ] **Prediction-data phase.** Still the app's real goal — H2H aggregates,
+  predicted-XI-in-compare, raw xG surfacing, numeric probabilities, BSD
+  `predictions`/`odds` probes (see §7-era notes deeper in this file).
+
+## 8ab. Groq live for match insight ✅ DONE (2026-09-17)
+`LLM_API_KEY` set (gitignored `.env`, to be rotated — lived in chat);
+default model was retired (`llama-3.3-70b-versatile` → model_not_found), so
+`LLM_MODEL=openai/gpt-oss-20b` (from the key's live model list) plus a token
+budget bump (350 → 1500 — reasoning models spend tokens thinking before the
+`content` field fills). Verified live: `insightGeneratedBy=ai` with
+model-written prose; failures still fall back to the template.
+
+## 8ad. ESPN crests via backend proxy, parser verified ✅ DONE (2026-09-17)
+Six-probe saga: browser CORS, local DNS refusal, Akamai edge 403s, empty
+CloudFront 202s, TSDB's 10/20 + zero cups — all ruled out or rejected, which
+is why this is a same-origin `GET /api/crests` proxy (`clients/espnClient.ts`,
+24h success-only cache) with doc-confirmed slugs (Conference =
+`uefa.europa.conf`). Frontend matches BSD→ESPN names (exact → normalized →
+unique one-way containment) and layers badges over monograms. Parser verified
+field-by-field against a real pasted `teams` entry (Bournemouth: displayName,
+default-rel href, string id, abbreviation all hit; matcher resolves). Badges
+appear on deploy/tether; monograms until then. Future: prefer the `dark` logo
+variant under the dark theme.
+
+## 8aa. ESPN crests (monogram fallback preserved) ✅ DONE (2026-09-17)
+BSD has no artwork, so badges resolve frontend-direct from ESPN's keyless
+API — zero backend involvement. `crests.ts`: per-league team lists (7-day
+localStorage + shared in-flight dedupe), BSD→ESPN matching (exact →
+normalized → unique one-directional containment; ambiguous = monogram), logo
+pick prefers the `default` rel variant. `TeamCrest` renders the badge over
+the mounted monogram (zero shift, silent fallback) once `competition` is
+passed — wired through rows, hero, standings tables, dashboard header,
+sidebar favorites, search, and both picker layouts. Conference League slug
+(`uefa.conference`) is unverified and degrades cleanly. Frontend build green;
+badges need a browser eyeball (this machine's DNS blocks ESPN).
+
+## 8z. Audit fixes with pushback ✅ DONE (2026-09-17)
+Compare audit scored 17/20. Fixed the legit half, contested the rest:
+- **Live region:** sr-only `aria-live="polite"` status node in compare mode
+  (Comparing… / ready / failure text) + `aria-busy` on `main` while fetching.
+- **Focus return:** `IconSelect` trigger ref, focus restored on Escape and on
+  commit (keyboard users keep their place).
+- **Headings:** `LineupSide` h3 → styled `p` (summaries aren't real headings,
+  so the h3s dangled). Trailing bars 0.55 → 0.75. Dead `<title>` out of the
+  aria-hidden X svg.
+- **Contested, unchanged:** muted contrast (measured 5.37–7.36, all pass —
+  the P1 was a false positive); radar memo (reverted in §8y with cause);
+  H2H truncation (two-line wrap is the settled call); Chart.js (audit says
+  leave); captain "C" badge (doesn't exist — © + legend stands).
+- Both builds green.
+
+## 8y. Polish-pass review (subagent) ✅ DONE (2026-09-17)
+Reviewed the subagent's direct-to-tree polish instead of trusting it: kept
+SVG glyph swaps, contrast bumps, radar sr-table, active anchor state.
+Reverted all-sizes sticky anchors to `lg:` (mobile header wraps taller than
+the 80px offset) and reverted the RadarChart token memo (per-instance theme
+state never re-renders on toggle — stale chart colors; per-render reads are
+unmeasurably cheap here). Committed as `4bf86c7` (not pushed).
 
 ## 8x. Re-critique round: news, verdict, disclosures, identity ✅ DONE (2026-09-17)
 - **layout:** News auto-expands on <48h-fresh items, stays shut for stale;

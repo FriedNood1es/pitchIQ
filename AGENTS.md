@@ -104,7 +104,7 @@ lineups — to guide a match prediction.
 
 ## Conventions & gotchas
 
-- `NEXT_STEPS.md` is the living changelog/todo — read it before working, and update it
+- `roadmap.md` is the living changelog/todo — read it before working, and update it
   when you ship a chunk of work. `workflow/ScoutAI_Agentic_Workflow.md` is stale
   (mentions Prisma/PostgreSQL/OpenAI/LangChain that aren't in the code) — don't trust it.
 - Competitions live in `data/competitions.ts` and are pinned to completed seasons with
