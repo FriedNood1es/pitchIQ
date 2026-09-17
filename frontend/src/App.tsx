@@ -410,8 +410,7 @@ export default function App() {
               title="Back to homepage"
               className="text-xl font-extrabold tracking-tight text-[var(--text)] transition hover:opacity-80"
             >
-              <span aria-hidden className="mr-1">⚽</span>Pitch
-              <span style={{ color: "var(--brand)" }}>IQ</span>
+              Pitch<span style={{ color: "var(--brand)" }}>IQ</span>
             </button>
             <span className="text-sm font-medium text-[var(--muted)]">Data-backed football predictions</span>
             <span className="ml-auto flex min-w-0 flex-1 justify-end sm:flex-none sm:flex-initial">

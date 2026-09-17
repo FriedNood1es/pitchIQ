@@ -1,14 +1,16 @@
 import { useFavoriteTeams } from "../hooks/useFavoriteTeams";
-import { usePinnedLeagues } from "../hooks/usePinnedLeagues";
 import { Competition, TeamSearchResult } from "../types";
 import { CountryFlag } from "./CountryFlag";
 import { TeamCrest } from "./TeamCrest";
 
 interface Props {
+  /** Pinned-first ordered leagues — the single model shared with the chips. */
   competitions: Competition[];
   /** Empty string = all leagues. */
   competition: string;
+  pinned: string[];
   onCompetitionChange: (competition: string) => void;
+  onTogglePin: (id: string) => void;
   onSelectTeam: (team: TeamSearchResult) => void;
 }
 
@@ -16,10 +18,11 @@ interface Props {
 export function LeagueSidebar({
   competitions,
   competition,
+  pinned,
   onCompetitionChange,
+  onTogglePin,
   onSelectTeam,
 }: Props) {
-  const [pinned, togglePin] = usePinnedLeagues();
   const [favorites] = useFavoriteTeams();
   const pinnedSet = new Set(pinned);
   const pinnedComps = competitions.filter((c) => pinnedSet.has(c.id));
@@ -52,7 +55,7 @@ export function LeagueSidebar({
         {id && (
           <button
             type="button"
-            onClick={() => togglePin(id)}
+            onClick={() => onTogglePin(id)}
             aria-pressed={isPinned}
             aria-label={`${isPinned ? "Unpin" : "Pin"} ${name}`}
             title={`${isPinned ? "Unpin" : "Pin"} ${name}`}

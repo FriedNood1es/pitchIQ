@@ -15,7 +15,12 @@ async function getJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? `Request failed with status ${res.status}`);
+    // Status travels on the error so callers can tell expected 404s
+    // (no pinned-season row — permanent) from retryable failures.
+    throw Object.assign(
+      new Error(body.error ?? `Request failed with status ${res.status}`),
+      { status: res.status }
+    );
   }
   return res.json();
 }

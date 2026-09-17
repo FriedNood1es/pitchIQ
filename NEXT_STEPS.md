@@ -2,6 +2,45 @@
 
 _Last updated: 2026-09-17_
 
+## 8u. Honest no-stats state + quiet 404s ✅ DONE (2026-09-17)
+Coventry/West-Ham-style 404s rendered a red error card with a Retry button
+that could never succeed. Split by cause: `getJson` now carries the HTTP
+status on thrown errors, `useTeamStats` never retries 404s (502s keep 2
+retries), and `TeamView` renders a neutral muted info card for 404s ("no
+completed-season table entry — likely new to the competition; preview and
+fixtures use live data", no Retry) while real failures keep the red retry
+card. Frontend build green, dev transform confirmed fresh.
+
+## 8t. Re-critique actions (rank, affordance, voice) ✅ DONE (2026-09-17)
+- **onboard:** hero auto-collapses once fixtures exist (first visits with data
+  land on matches; empty/error states still teach). Manual Hide persists;
+  Intro reopens for the session.
+- **distill:** overview bands rank live-now → scheduled-today → rest by
+  country. No counts — ranked without them per the §8o decision standoff.
+- **clarify:** rows carry a persistent low-emphasis "Compare ›" (aria-hidden,
+  inside the row button so no extra tab stop; pending spinner kept).
+- **bolder (light):** ⚽ emoji out, text wordmark in (`Pitch` + brand `IQ`);
+  one form-streak badge per band ("X unbeaten in N", 3+ from the band's own
+  finished fixtures, hidden on small phones). No rebrand, tone untouched.
+- Frontend build green, dev transform confirmed fresh.
+
+## 8s. Critique follow-through (24/40 → fixes) ✅ DONE (2026-09-17)
+Homepage critique scored 24/40; worked the plan stepwise, favorites kept
+separate from leagues throughout.
+- **layout:** hero collapses to a one-line strip after first dismissal
+  (`pitchiq:hero-collapsed`), so returning visits open onto matches.
+- **distill:** one league model — `usePinnedLeagues` + pinned-first ordering
+  moved into `FixturesView`; sidebar and mobile chips render from it (a pin
+  reorders both).
+- **clarify:** finished rows lost the disabled-looking dim (FT + scores carry
+  it); stepper ‹ › gained sighted tooltips; copy left clinical as-is.
+- **audit:** arrow-key roving focus on rows/pills/chips (one 15-line helper,
+  disabled rows skipped); stepped day (by stable date key) + scroll offset
+  persist session-scoped with restore-once guards. Focus rings verified
+  global; identity never color-only (initials + names as text).
+- **polish:** stepper scroll margin `scroll-mt-4` → `scroll-mt-24` so date
+  labels clear the sticky header. Frontend build green.
+
 ## 8r. Sliding status-pill indicator ✅ DONE (2026-09-17)
 The green highlight now glides between All/Live/Finished/Scheduled instead of
 snapping. No new deps: an absolutely-positioned span in the (now `relative`)

@@ -162,18 +162,25 @@ export function TeamView({
         onRetry={() => refetchPreview()}
       />
 
-      {statsError && (
-        <div className="tl-card flex items-center justify-between gap-3 p-4 text-sm" style={{ color: "var(--loss)" }}>
-          <span>No completed-season stats for this club in this competition — showing live preview + fixtures. Couldn't load stats: {statsErrorObj?.message}</span>
-          <button
-            className="rounded-[10px] px-3 py-1.5 text-xs font-bold"
-            style={{ background: "var(--surface-3)", color: "var(--text)" }}
-            onClick={() => refetchStats()}
-          >
-            Retry
-          </button>
-        </div>
-      )}
+      {statsError &&
+        ((statsErrorObj as unknown as { status?: number })?.status === 404 ? (
+          <div className="tl-card p-4 text-sm text-[var(--muted)]">
+            No completed-season table entry for {teamInfo?.name ?? name} in the{" "}
+            {competitionName} — likely new to the competition this season.
+            Preview and fixtures on this page use live data.
+          </div>
+        ) : (
+          <div className="tl-card flex items-center justify-between gap-3 p-4 text-sm" style={{ color: "var(--loss)" }}>
+            <span>Couldn't load stats: {statsErrorObj?.message}</span>
+            <button
+              className="rounded-[10px] px-3 py-1.5 text-xs font-bold"
+              style={{ background: "var(--surface-3)", color: "var(--text)" }}
+              onClick={() => refetchStats()}
+            >
+              Retry
+            </button>
+          </div>
+        ))}
       {stats && <TeamStatsPanel stats={stats} />}
 
       <div className="tl-card p-5">

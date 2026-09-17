@@ -8,5 +8,10 @@ export function useTeamStats(competition: string, name: string) {
     queryFn: () => fetchTeamStats(competition, name),
     enabled: Boolean(competition) && Boolean(name),
     staleTime: 1000 * 60 * 10,
+    // A 404 means no pinned-season row exists — permanent, never retry it.
+    retry: (failureCount, error) =>
+      (error as unknown as { status?: number })?.status === 404
+        ? false
+        : failureCount < 2,
   });
 }

@@ -1,9 +1,10 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { fetchStandings } from "../api/client";
 import { CountryFlag } from "./CountryFlag";
 import { LeagueSidebar } from "./LeagueSidebar";
 import { MatchRow } from "./MatchRow";
 import { TeamCrest } from "./TeamCrest";
+import { usePinnedLeagues } from "../hooks/usePinnedLeagues";
 import {
   Competition,
   Fixture,
@@ -79,6 +80,55 @@ function groupByDate(fixtures: Fixture[], status: FixturesStatus) {
     .map(([key, list]) => ({ date: key, fixtures: list }));
 }
 
+/**
+ * Best active unbeaten run across a band's finished fixtures (finished
+ * sections arrive newest-first, so the first 5 collected per team are its
+ * latest). Returns null unless someone is unbeaten in 3+.
+ */
+function bandStreak(dates: { fixtures: Fixture[] }[]): { name: string; run: number } | null {
+  const results = new Map<string, ("W" | "D" | "L")[]>();
+  const names = new Map<string, string>();
+  for (const d of dates) {
+    for (const f of d.fixtures) {
+      if (f.status !== "finished") continue;
+      const hs = f.homeScore ?? 0;
+      const as = f.awayScore ?? 0;
+      const push = (id: string, name: string, r: "W" | "D" | "L") => {
+        names.set(id, name);
+        const arr = results.get(id) ?? [];
+        if (arr.length < 5) arr.push(r);
+        results.set(id, arr);
+      };
+      push(f.homeTeam.id, f.homeTeam.name, hs > as ? "W" : hs < as ? "L" : "D");
+      push(f.awayTeam.id, f.awayTeam.name, as > hs ? "W" : as < hs ? "L" : "D");
+    }
+  }
+  let best: { name: string; run: number } | null = null;
+  for (const [id, arr] of results) {
+    let run = 0;
+    for (const r of arr) {
+      if (r === "L") break;
+      run++;
+    }
+    if (run >= 3 && (!best || run > best.run)) best = { name: names.get(id)!, run };
+  }
+  return best;
+}
+
+/** Arrow-key roving focus across a container's buttons (Tab still works). */
+function arrowNav(e: KeyboardEvent<HTMLElement>, orientation: "vertical" | "horizontal") {
+  const fwd = orientation === "vertical" ? "ArrowDown" : "ArrowRight";
+  const back = orientation === "vertical" ? "ArrowUp" : "ArrowLeft";
+  if (e.key !== fwd && e.key !== back) return;
+  const items = Array.from(
+    e.currentTarget.querySelectorAll<HTMLButtonElement>("button:not([disabled])")
+  );
+  const i = items.indexOf(document.activeElement as HTMLButtonElement);
+  if (i === -1) return;
+  e.preventDefault();
+  items[(i + (e.key === fwd ? 1 : -1) + items.length) % items.length].focus();
+}
+
 function DateSection({
   label,
   fixtures,
@@ -94,11 +144,11 @@ function DateSection({
   anchor?: string;
 }) {
   return (
-    <div id={anchor} className="scroll-mt-4">
+    <div id={anchor} className="scroll-mt-24">
       <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
         {label}
       </h3>
-      <div className="mt-1.5 space-y-1">
+      <div className="mt-1.5 space-y-1" onKeyDown={(e) => arrowNav(e, "vertical")}>
         {fixtures.map((f) => (
           <MatchRow
             key={f.eventId}
@@ -183,6 +233,8 @@ export function FixturesView({
   pendingEventId,
 }: Props) {
   // All leagues -> group by league, then date; one league -> date sections only.
+  // Overview ranks live-now leagues first, then leagues with matches today,
+  // then the rest by country — no counts, per the §8o decision.
   const groups = useMemo(() => {
     if (!fixtures) return [];
     if (competition) {
@@ -195,6 +247,17 @@ export function FixturesView({
         },
       ];
     }
+    const today = new Date().toDateString();
+    const tier = (dates: { fixtures: Fixture[] }[]) => {
+      if (dates.some((d) => d.fixtures.some((f) => f.status === "live"))) return 0;
+      if (
+        dates.some((d) =>
+          d.fixtures.some((f) => f.status === "scheduled" && new Date(f.date).toDateString() === today)
+        )
+      )
+        return 1;
+      return 2;
+    };
     const byLeague = new Map<string, Fixture[]>();
     for (const f of fixtures) {
       const list = byLeague.get(f.competition) ?? [];
@@ -211,12 +274,28 @@ export function FixturesView({
           dates: groupByDate(list, status),
         };
       })
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort(
+        (a, b) =>
+          tier(a.dates) - tier(b.dates) ||
+          a.country.localeCompare(b.country) ||
+          a.name.localeCompare(b.name)
+      );
   }, [fixtures, competition, competitions, status]);
+
+  // One league model for sidebar and chips: pinned-first ordering lives
+  // here, both surfaces render from it — a pin on desktop reorders mobile.
+  const [pinned, togglePin] = usePinnedLeagues();
+  const orderedCompetitions = useMemo(() => {
+    const set = new Set(pinned);
+    return [
+      ...competitions.filter((c) => set.has(c.id)),
+      ...competitions.filter((c) => !set.has(c.id)),
+    ];
+  }, [competitions, pinned]);
 
   const leagues = [
     { id: "", name: "All leagues", country: "" },
-    ...competitions.map((c) => ({ id: c.id, name: c.name, country: c.country })),
+    ...orderedCompetitions.map((c) => ({ id: c.id, name: c.name, country: c.country })),
   ];
 
   // Bands page matches in batches of PAGE_SIZE; each Show more click
@@ -250,11 +329,33 @@ export function FixturesView({
           dates.push({ date: d.date, fixtures: slice });
           shown += slice.length;
         }
-        return { ...g, total, hidden: total - shown, dates };
+        return { ...g, total, hidden: total - shown, dates, streak: bandStreak(g.dates) };
       }),
     [groups, visibleCount]
   );
 
+  // Hero onboarding shows for first visits without data; once fixtures
+  // exist it collapses to the one-liner (manual Hide persists, Intro
+  // reopens for the session).
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem("pitchiq:hero-collapsed") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [forceOpen, setForceOpen] = useState(false);
+  function setHero(open: boolean) {
+    setForceOpen(open);
+    setDismissed(!open);
+    try {
+      localStorage.setItem("pitchiq:hero-collapsed", open ? "0" : "1");
+    } catch {
+      // Private mode etc. — the hero just doesn't stay collapsed.
+    }
+  }
+  const showHero =
+    forceOpen || (!dismissed && (!fixtures || fixtures.length === 0 || isError));
   // Collapsed league bands — session-only, so a revisit never hides matches.
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   function toggleCollapse(key: string) {
@@ -316,6 +417,58 @@ export function FixturesView({
       ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   }
 
+  // Survive interruption (reload, tab switch): restore the stepped-to day by
+  // stable date key — not index, the list shifts as fixtures update — and the
+  // scroll offset. Session-scoped; each restores once so later refetches
+  // never yank the viewport.
+  const restoredDayRef = useRef(false);
+  const restoredScrollRef = useRef(false);
+  useEffect(() => {
+    if (days.length === 0 || restoredDayRef.current) return;
+    restoredDayRef.current = true;
+    let key: string | null = null;
+    try {
+      key = sessionStorage.getItem("pitchiq:fixtures-day");
+    } catch {
+      // Private mode — start at the default day.
+    }
+    const i = key ? days.findIndex((d) => d.key === key) : 0;
+    if (i > 0) {
+      setDayIdx(i);
+      document.getElementById(`fixtures-day-${i}`)?.scrollIntoView({ block: "start" });
+    }
+  }, [days]);
+  useEffect(() => {
+    if (days.length === 0) return;
+    try {
+      sessionStorage.setItem("pitchiq:fixtures-day", days[safeIdx].key);
+    } catch {
+      // Private mode — the day just doesn't persist.
+    }
+  }, [days, safeIdx]);
+  useEffect(() => {
+    if (!fixtures || restoredScrollRef.current) return;
+    restoredScrollRef.current = true;
+    let y = 0;
+    try {
+      y = Number(sessionStorage.getItem("pitchiq:fixtures-scroll") ?? 0);
+    } catch {
+      // Private mode — start at top.
+    }
+    if (y > 0) window.scrollTo(0, y);
+  }, [fixtures]);
+  useEffect(() => {
+    const save = () => {
+      try {
+        sessionStorage.setItem("pitchiq:fixtures-scroll", String(window.scrollY));
+      } catch {
+        // Private mode — scroll just doesn't persist.
+      }
+    };
+    window.addEventListener("scroll", save, { passive: true });
+    return () => window.removeEventListener("scroll", save);
+  }, []);
+
   // Standings tables, fetched once per competition when its focused band
   // is open (including on first render — bands start expanded, so there is
   // no open-transition to hook the fetch onto). A band showing the section
@@ -333,10 +486,22 @@ export function FixturesView({
 
   return (
     <div className="space-y-5">
+      {showHero ? (
       <section className="tl-card tl-reveal p-5">
-        <h1 className="text-xl font-extrabold tracking-tight text-[var(--text)]">
-          Pick a match. Get a data-backed prediction.
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-xl font-extrabold tracking-tight text-[var(--text)]">
+            Pick a match. Get a data-backed prediction.
+          </h1>
+          <button
+            type="button"
+            onClick={() => setHero(false)}
+            aria-label="Hide introduction"
+            title="Hide introduction"
+            className="shrink-0 rounded-lg px-2 py-1 text-sm font-bold text-[var(--muted)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+          >
+            Hide ▲
+          </button>
+        </div>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Form, xG, head-to-head and predicted lineups — insight to guide your prediction.
         </p>
@@ -369,17 +534,38 @@ export function FixturesView({
           ))}
         </ol>
       </section>
+      ) : (
+        <section
+          aria-label="Introduction (collapsed)"
+          className="tl-card flex items-center gap-3 px-4 py-2.5"
+        >
+          <span className="truncate text-sm text-[var(--muted)]">
+            <strong className="font-bold text-[var(--text)]">PitchIQ</strong>
+            {" — pick a match for a data-backed prediction."}
+          </span>
+          <button
+            type="button"
+            onClick={() => setHero(true)}
+            aria-label="Show introduction"
+            className="ml-auto shrink-0 rounded-lg px-2 py-1 text-sm font-bold text-[var(--muted)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+          >
+            Intro ▼
+          </button>
+        </section>
+      )}
       <div className="flex items-start gap-5">
         <LeagueSidebar
-          competitions={competitions}
+          competitions={orderedCompetitions}
           competition={competition}
+          pinned={pinned}
           onCompetitionChange={onCompetitionChange}
+          onTogglePin={togglePin}
           onSelectTeam={onSelectTeam}
         />
         <div className="min-w-0 flex-1 space-y-5">
       <div className="tl-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-        <div ref={trackRef} className="relative inline-flex gap-1 rounded-xl border p-1" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }} role="group" aria-label="Match status">
+        <div ref={trackRef} className="relative inline-flex gap-1 rounded-xl border p-1" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }} role="group" aria-label="Match status" onKeyDown={(e) => arrowNav(e, "horizontal")}>
           <span
             aria-hidden="true"
             className="tl-slide-indicator absolute bottom-1 left-0 top-1 rounded-lg"
@@ -416,6 +602,7 @@ export function FixturesView({
               onClick={() => stepTo(safeIdx - 1)}
               disabled={safeIdx === 0}
               aria-label="Previous day"
+              title="Previous day"
               className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
             >
               ‹
@@ -428,6 +615,7 @@ export function FixturesView({
               onClick={() => stepTo(safeIdx + 1)}
               disabled={safeIdx === days.length - 1}
               aria-label="Next day"
+              title="Next day"
               className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
             >
               ›
@@ -442,6 +630,7 @@ export function FixturesView({
             className="league-chips flex min-w-0 gap-2 overflow-x-auto pb-1"
             role="group"
             aria-label="Competitions"
+            onKeyDown={(e) => arrowNav(e, "horizontal")}
           >
             {leagues.map((l) => {
               const active = competition === l.id;
@@ -525,6 +714,14 @@ export function FixturesView({
                   <span className="truncate text-sm font-bold text-[var(--text)]">
                     {league.name}
                   </span>
+                  {league.streak && (
+                    <span
+                      className="hidden shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold sm:inline-flex"
+                      style={{ background: "var(--surface-3)", color: "var(--text-2)" }}
+                    >
+                      {league.streak.name} unbeaten in {league.streak.run}
+                    </span>
+                  )}
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={`ml-auto shrink-0 text-[var(--muted)] transition ${shut ? "" : "rotate-180"}`}>
                     <path d="M6 9l6 6 6-6" />
                   </svg>
