@@ -24,11 +24,12 @@ interface Props {
 
 // 33 = ~20% alpha for the area wash.
 export function RadarChart({ labels, datasets }: Props) {
+  // Read per render, not memoized: tokens follow the live theme toggle and
+  // this renders rarely enough that caching saves nothing measurable.
   const series = [token("--team-a"), token("--team-b")];
   const grid = token("--grid");
   const text2 = token("--text-2");
   const muted = token("--muted");
-
   const data = {
     labels,
     datasets: datasets.map((dataset, i) => ({
@@ -43,9 +44,30 @@ export function RadarChart({ labels, datasets }: Props) {
   };
 
   return (
-    <div className="tl-card p-5">
-      <h2 className="tl-card-title mb-2">Rating Profile</h2>
-      <div className="h-96">
+    <details className="tl-card px-5 py-4">
+      <summary className="tl-card-title cursor-pointer">Rating Profile</summary>
+      <table className="sr-only">
+        <caption>Rating profile values by team</caption>
+        <thead>
+          <tr>
+            <th scope="col">Metric</th>
+            {datasets.map((d) => (
+              <th key={d.label} scope="col">{d.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {labels.map((label, i) => (
+            <tr key={label}>
+              <th scope="row">{label}</th>
+              {datasets.map((d) => (
+                <td key={d.label}>{d.data[i]}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="mt-2 h-72 sm:h-80">
         <Radar
           data={data}
           options={{
@@ -66,6 +88,6 @@ export function RadarChart({ labels, datasets }: Props) {
           }}
         />
       </div>
-    </div>
+    </details>
   );
 }

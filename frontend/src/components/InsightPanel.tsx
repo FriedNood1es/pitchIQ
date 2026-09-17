@@ -1,3 +1,5 @@
+import { formatWhen } from "./NewsList";
+
 interface Props {
   insight: string;
   generatedAt: string;
@@ -5,7 +7,7 @@ interface Props {
 }
 
 export function InsightPanel({ insight, generatedAt, generatedBy }: Props) {
-  const label = generatedBy === "ai" ? "AI" : "Auto";
+  const label = generatedBy === "ai" ? "AI" : "Auto · data brief";
   return (
     <div className="tl-card p-5">
       <div className="mb-3 flex items-center gap-2">
@@ -32,7 +34,7 @@ export function InsightPanel({ insight, generatedAt, generatedBy }: Props) {
         {insight}
       </p>
       <p className="mt-3 text-xs text-[var(--muted)]">
-        Generated {new Date(generatedAt).toLocaleString()}
+        Generated {formatWhen(generatedAt)}
       </p>
     </div>
   );

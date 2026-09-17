@@ -8,7 +8,7 @@ interface Props {
 }
 
 /** Handles both ISO timestamps (live feed) and date-only strings (mocks). */
-function formatWhen(publishedAt: string): string {
+export function formatWhen(publishedAt: string): string {
   const date = new Date(publishedAt);
   if (Number.isNaN(date.getTime())) return publishedAt;
 
@@ -29,7 +29,10 @@ function NewsEntry({ item }: { item: NewsItem }) {
     <>
       <p className="font-medium text-[var(--text)]">
         {item.kind === "tweet" && (
-          <span className="mr-1.5 text-xs text-[var(--muted)]">𝕏</span>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" className="mr-1.5 inline-block align-baseline text-[var(--muted)]">
+            <title>Club post on X</title>
+            <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" />
+          </svg>
         )}
         {item.headline}
       </p>
@@ -87,10 +90,32 @@ function NewsColumn({
   );
 }
 
+/** Open by default when anything is fresh (under 48h) — stale-only feeds stay shut. */
+const FRESH_MS = 48 * 60 * 60 * 1000;
+function isFresh(publishedAt: string): boolean {
+  const t = new Date(publishedAt).getTime();
+  return !Number.isNaN(t) && Date.now() - t < FRESH_MS;
+}
+
 export function NewsList({ teamAName, teamBName, teamANews, teamBNews }: Props) {
+  const top = [...teamANews, ...teamBNews].find((i) => i.headline);
+  const hasFresh = [...teamANews, ...teamBNews].some((i) => isFresh(i.publishedAt));
   return (
-    <details className="tl-card px-5 py-4" open>
-      <summary className="tl-card-title cursor-pointer">Latest News</summary>
+    <details className="tl-card px-5 py-4" open={hasFresh}>
+      <summary className="cursor-pointer">
+        <span className="tl-card-title">
+          Latest News{" "}
+          <span className="font-extrabold tabular-nums">
+            ({teamANews.length} · {teamBNews.length})
+          </span>
+        </span>
+        {top && (
+          <span className="mt-1 block truncate text-sm font-medium normal-case tracking-normal text-[var(--text-2)]">
+            {top.headline}{" "}
+            <span className="text-xs text-[var(--muted)]">· {formatWhen(top.publishedAt)}</span>
+          </span>
+        )}
+      </summary>
       <div className="mt-3 grid grid-cols-1 gap-6 sm:grid-cols-2">
         <NewsColumn teamName={teamAName} seriesColor="var(--team-a)" items={teamANews} />
         <NewsColumn teamName={teamBName} seriesColor="var(--team-b)" items={teamBNews} />

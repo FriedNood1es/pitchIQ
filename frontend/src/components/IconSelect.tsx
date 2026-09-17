@@ -141,7 +141,9 @@ export function IconSelect({
           {selected?.label ?? "Select…"}
         </span>
         <span aria-hidden="true" className="text-[var(--muted)]">
-          ▾
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 4.5 6 7.5 9 4.5" />
+          </svg>
         </span>
       </button>
 

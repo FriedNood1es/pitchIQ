@@ -47,11 +47,11 @@ export function HeadToHeadPanel({ headToHead, teamA, teamAName, teamBName }: Pro
           const rightWon = m.awayGoals > m.homeGoals;
 
           return (
-            <li key={i} className="flex items-center gap-3 py-2.5 text-sm">
-              <span className="w-20 shrink-0 text-xs text-[var(--muted)]">
+            <li key={i} className="py-2.5 text-sm">
+              <span className="block text-xs text-[var(--muted)]">
                 {formatDate(m.date)}
               </span>
-              <span className="min-w-0 flex-1 truncate font-medium text-[var(--text-2)]">
+              <span className="mt-0.5 block font-medium text-[var(--text-2)]">
                 <span style={{ fontWeight: leftWon ? 700 : 400, color: leftWon ? "var(--text)" : undefined }}>
                   {aHome ? teamAName : teamBName}
                 </span>

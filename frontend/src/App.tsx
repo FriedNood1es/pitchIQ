@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
-import { CompareBar } from "./components/CompareBar";
+import { useEffect, useRef, useState } from "react";
+import { ComparePicker } from "./components/ComparePicker";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { computeEdge } from "./edge";
 import { FixturesView } from "./components/FixturesView";
 import { HeadToHeadPanel } from "./components/HeadToHeadPanel";
 import { InsightPanel } from "./components/InsightPanel";
 import { LineupPanel } from "./components/LineupPanel";
-import { MatchHero } from "./components/MatchHero";
+import { HeroAnchors, MatchHero } from "./components/MatchHero";
 import { NewsList } from "./components/NewsList";
 import { RadarChart } from "./components/RadarChart";
 import { ReportSkeleton } from "./components/Skeletons";
 import { StatComparison, StatRow } from "./components/StatComparison";
-import { TeamComparisonForm } from "./components/TeamComparisonForm";
 import { TeamSearchBox } from "./components/TeamSearchBox";
 import { TeamView } from "./components/TeamView";
 import { useCompareTeams } from "./hooks/useCompareTeams";
@@ -56,19 +56,33 @@ function resolveTeam(
 
 function buildStatRows(a: TeamStats, b: TeamStats): StatRow[] {
   const pts = (t: TeamStats) => t.wins * 3 + t.draws;
+  // Football-word gap ("Arsenal ahead by 8", omitted when level). Conceded
+  // inverts: fewer is better.
+  const gap = (
+    aVal: number,
+    bVal: number,
+    unit = "",
+    lowerBetter = false
+  ): string | undefined => {
+    const d = lowerBetter ? bVal - aVal : aVal - bVal;
+    if (Math.round(d) === 0) return undefined;
+    const leader = d > 0 ? a.name : b.name;
+    return `${leader} ahead by ${Math.abs(Math.round(d))}${unit}`;
+  };
   return [
-    { label: "Points", a: pts(a), b: pts(b) },
-    { label: "Attack", a: a.attackRating, b: b.attackRating },
-    { label: "Defense", a: a.defenseRating, b: b.defenseRating },
+    { label: "Points", a: pts(a), b: pts(b), delta: gap(pts(a), pts(b)) },
+    { label: "Attack", a: a.attackRating, b: b.attackRating, delta: gap(a.attackRating, b.attackRating) },
+    { label: "Defense", a: a.defenseRating, b: b.defenseRating, delta: gap(a.defenseRating, b.defenseRating) },
     {
       label: "Possession (est.)",
       a: a.possessionAvg,
       b: b.possessionAvg,
       displayA: `${a.possessionAvg}%`,
       displayB: `${b.possessionAvg}%`,
+      delta: gap(a.possessionAvg, b.possessionAvg, "%"),
     },
-    { label: "Goals scored", a: a.goalsFor, b: b.goalsFor },
-    { label: "Goals conceded", a: a.goalsAgainst, b: b.goalsAgainst },
+    { label: "Goals scored", a: a.goalsFor, b: b.goalsFor, delta: gap(a.goalsFor, b.goalsFor) },
+    { label: "Goals conceded", a: a.goalsAgainst, b: b.goalsAgainst, delta: gap(a.goalsAgainst, b.goalsAgainst, "", true) },
   ];
 }
 
@@ -187,13 +201,23 @@ export default function App() {
     setHashDraft(null);
   }, [hashDraft, competition, teams]);
 
-  // Default the compare slots to the first two whenever they are empty.
+  // Fill the compare slots once a competition's teams load: stashed names
+  // from a competition switch win, otherwise default to the first two.
   useEffect(() => {
     if (hashDraft) return;
-    if (teams && teams.length >= 2) {
-      setTeamA((a) => a || teams[0].id);
-      setTeamB((b) => b || teams[1].id);
+    if (!teams || teams.length < 2) return;
+    if (pendingNames.current) {
+      const { a, b } = pendingNames.current;
+      pendingNames.current = null;
+      const ra = resolveTeam(teams, a) ?? teams[0].id;
+      let rb = resolveTeam(teams, b) ?? teams[1].id;
+      if (rb === ra) rb = teams.find((t) => t.id !== ra)?.id ?? teams[1].id;
+      setTeamA(ra);
+      setTeamB(rb);
+      return;
     }
+    setTeamA((x) => x || teams[0].id);
+    setTeamB((x) => x || teams[1].id);
   }, [hashDraft, teams]);
 
   // A match row clicked in the fixtures view: resolve the two clubs' standings
@@ -318,7 +342,15 @@ export default function App() {
     mode === "fixtures"
   );
 
+  // Names stashed across a competition switch so picks survive where the
+  // same clubs exist (resolved against the new list on load, else defaulted).
+  const pendingNames = useRef<{ a: string; b: string } | null>(null);
+
   function handleChangeCompetition(id: string) {
+    const nameOf = (t: TeamId) => teams?.find((x) => x.id === t)?.name;
+    const a = nameOf(teamA);
+    const b = nameOf(teamB);
+    pendingNames.current = a && b ? { a, b } : null;
     setCompetition(id);
     setHasCompared(false);
     setTeamA("");
@@ -421,7 +453,8 @@ export default function App() {
         </header>
       </div>
       {mode === "compare" && canCompare && (
-        <CompareBar
+        <ComparePicker
+          layout="bar"
           competitions={competitions ?? []}
           competition={competition}
           teams={teams ?? []}
@@ -490,7 +523,8 @@ export default function App() {
         )}
 
         {mode === "compare" && !canCompare && (
-          <TeamComparisonForm
+          <ComparePicker
+            layout="form"
             competitions={competitions ?? []}
             competition={competition}
             teams={teams ?? []}
@@ -552,8 +586,10 @@ export default function App() {
                 competitionName={competitionName}
                 teamA={report.teams.teamA.stats}
                 teamB={report.teams.teamB.stats}
+                edge={computeEdge(report)}
               />
             </div>
+            <HeroAnchors />
             <div className="tl-reveal tl-reveal-delay-1">
               <InsightPanel
                 insight={report.insight}
@@ -561,14 +597,14 @@ export default function App() {
                 generatedBy={report.insightGeneratedBy}
               />
             </div>
-            <div>
+            <div id="compare-stats" className="scroll-mt-24">
               <StatComparison
                 rows={buildStatRows(report.teams.teamA.stats, report.teams.teamB.stats)}
                 teamAName={report.teams.teamA.stats.name}
                 teamBName={report.teams.teamB.stats.name}
               />
             </div>
-            <div>
+            <div id="compare-lineups" className="scroll-mt-24">
               <LineupPanel
                 teamAName={report.teams.teamA.stats.name}
                 teamBName={report.teams.teamB.stats.name}
@@ -578,7 +614,7 @@ export default function App() {
                 teamBInjuries={report.teams.teamB.injuries}
               />
             </div>
-            <div>
+            <div id="compare-h2h" className="scroll-mt-24">
               <HeadToHeadPanel
                 headToHead={report.headToHead}
                 teamA={report.intent.teamA}
@@ -586,13 +622,13 @@ export default function App() {
                 teamBName={report.teams.teamB.stats.name}
               />
             </div>
-            <div>
+            <div id="compare-chart" className="scroll-mt-24">
               <RadarChart
                 labels={report.visualization.radar.labels}
                 datasets={report.visualization.radar.datasets}
               />
             </div>
-            <div>
+            <div id="compare-news" className="scroll-mt-24">
               <NewsList
                 teamAName={report.teams.teamA.stats.name}
                 teamBName={report.teams.teamB.stats.name}

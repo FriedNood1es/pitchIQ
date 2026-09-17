@@ -2,6 +2,48 @@
 
 _Last updated: 2026-09-17_
 
+## 8x. Re-critique round: news, verdict, disclosures, identity ✅ DONE (2026-09-17)
+- **layout:** News auto-expands on <48h-fresh items, stays shut for stale;
+  summary surfaces the top headline + relative time beside the counts.
+- **clarify:** hero verdict call ("X to win" + strength pill) with a labeled
+  projected scoreline from scoring/conceding averages (estimate, per the
+  possession precedent — never model output); raw edge demoted to detail.
+- **distill:** LineupPanel + RadarChart are native disclosures (empty lineup
+  stays open); per-side header is one legend row, aiScore the one number.
+- **polish:** `CREST_COLORS` extended past the PL (dark/saturated only —
+  Villarreal yellow cut for contrast; verified live: Barça/Atlético/Madrid
+  resolve); radar gained an sr-only data table; anchors track `aria-current`;
+  bar picker gained the same-team warning; "Form" anchor → "Ratings".
+  (Caught an unquoted key by building: dev is transpile-only.) Both green.
+
+## 8w. Compare re-critique follow-through ✅ DONE (2026-09-17)
+- **layout:** hero + verdict banner merged into one verdict header (edge,
+  reasons, gap line, sticky desktop anchors); `VerdictBanner.tsx` deleted.
+  (Also fixed a stale-dev incident: restarted Vite, which was serving the
+  pre-merge App transform.)
+- **clarify:** per-row football deltas ("Arsenal ahead by 8", conceded
+  inverted); edge/confidence/aiScore/© all announce meaning on focus.
+- **distill:** lineup headers are one legend row
+  (`4-3-3 · 68% XI confidence · Confirmed`); aiScore stays the one
+  per-player number.
+- **polish:** "Form" anchor renamed "Ratings" to match the card title.
+  Frontend build green.
+
+## 8v. Compare page critique follow-through (26/40 → fixes) ✅ DONE (2026-09-17)
+- **layout:** `edge.ts` deterministic data edge (ratings + 8×ppg gap + form +
+  2×H2H, Toss-up/Lean/Edge bands); `VerdictBanner` (edge + strength + reasons
+  + anchor chips) sits hero → verdict → insight prose; sections carry ids;
+  News collapsed with per-team counts.
+- **bolder:** edge value in leader team-color replaces symmetric VS; trailing
+  name steps back (crest/numbers full); points-gap line with honest fallbacks.
+- **clarify:** magnitude-relative stat bars on a track; visible ratings +
+  possession-estimate footnotes; "Auto · data brief" badge; lineup
+  confidence/aiScore/captain legend.
+- **distill:** `ComparePicker` (`form`/`bar`) deletes both pickers, "vs"
+  unified; picks survive competition switches via stashed-name resolution.
+- **polish:** radar `h-96` → `h-72 sm:h-80`; H2H two-line rows; 𝕏 titled;
+  `generatedAt` reuses relative `formatWhen`. Frontend build green.
+
 ## 8u. Honest no-stats state + quiet 404s ✅ DONE (2026-09-17)
 Coventry/West-Ham-style 404s rendered a red error card with a Retry button
 that could never succeed. Split by cause: `getJson` now carries the HTTP

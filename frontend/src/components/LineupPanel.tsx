@@ -40,25 +40,17 @@ export function LineupSide({
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-bold text-[var(--text)]">{teamName}</h3>
         {lineup && (
-          <div className="flex items-center gap-2">
-            <span className="rounded-md px-2 py-0.5 text-xs font-bold tabular-nums" style={{ background: "var(--surface-3)", color: "var(--text-2)" }}>
-              {lineup.formation}
-            </span>
+          <p className="shrink-0 text-xs tabular-nums text-[var(--muted)]">
+            {lineup.formation}
             {lineup.confidence != null && (
-              <span
-                className="rounded-md px-2 py-0.5 text-xs font-bold tabular-nums"
-                style={{ background: "var(--surface-3)", color: "var(--brand)" }}
-                title={`Lineup confidence: ${Math.round(lineup.confidence * 100)}%`}
-              >
-                {Math.round(lineup.confidence * 100)}%
-              </span>
+              <> · {Math.round(lineup.confidence * 100)}% XI confidence</>
             )}
             {lineup.confirmed && (
-              <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--good)]">
-                Confirmed
+              <span className="font-bold uppercase" style={{ color: "var(--good)" }}>
+                {" "}· Confirmed
               </span>
             )}
-          </div>
+          </p>
         )}
       </div>
 
@@ -80,11 +72,23 @@ export function LineupSide({
                         {p.jerseyNumber ?? ""}
                       </span>
                       <span className="min-w-0 flex-1 truncate font-medium text-[var(--text-2)]">
-                        {p.captain && <span title="Captain">© </span>}
+                        {p.captain && (
+                          <span
+                            aria-label="Captain"
+                            title="Captain"
+                            className="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full align-text-bottom text-[10px] font-bold"
+                            style={{ background: "var(--surface-3)", color: "var(--text)" }}
+                          >
+                            C
+                          </span>
+                        )}
                         {p.name}
                       </span>
                       {p.aiScore != null && (
-                        <span className="shrink-0 text-[10px] font-bold tabular-nums text-[var(--brand)]">
+                        <span
+                          className="shrink-0 text-[10px] font-bold tabular-nums text-[var(--brand)]"
+                          aria-label={`AI score ${p.aiScore} out of 100`}
+                        >
                           {p.aiScore}
                         </span>
                       )}
@@ -162,18 +166,22 @@ export function LineupPanel({
 
   if (!hasAny) {
     return (
-      <div className="tl-card p-5">
-        <h2 className="tl-card-title">Team News &amp; Lineups</h2>
+      <details className="tl-card px-5 py-4" open>
+        <summary className="tl-card-title cursor-pointer">Team News &amp; Lineups</summary>
         <p className="mt-2 text-sm text-[var(--muted)]">
           No lineup or injury data on record for either team's most recent fixture.
         </p>
-      </div>
+      </details>
     );
   }
 
   return (
-    <div className="tl-card p-5">
-      <h2 className="tl-card-title">Team News &amp; Lineups</h2>
+    <details className="tl-card px-5 py-4">
+      <summary className="tl-card-title cursor-pointer">Team News &amp; Lineups</summary>
+      <p className="mt-1 text-xs text-[var(--muted)]">
+        AI scores (0–100) rate how sure the model is about each starter —
+        higher means surer. © marks the captain.
+      </p>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         <LineupSide
           teamName={teamAName}
@@ -188,6 +196,6 @@ export function LineupPanel({
           emptyLabel="No lineup data for the last fixture."
         />
       </div>
-    </div>
+    </details>
   );
 }
