@@ -2,6 +2,13 @@
 
 _Last updated: 2026-09-20_
 
+## 8as. README refresh + MIT LICENSE ✅ DONE (2026-09-20)
+README rewritten to the current build (prediction bar, result view, H2H/radar
+grid, news snippets + thumbnails, ESPN badges, mandatory `LLM_MODEL`, new
+Deploy section) plus a Legal section: personal/non-commercial, not betting
+advice, no affiliation, third-party attribution, AI-may-be-wrong, no
+tracking. MIT `LICENSE` added (was missing entirely). Both builds green.
+
 ## 8ar. Deploy-ready: Render backend + Vercel frontend ✅ DONE (2026-09-20)
 Split by runtime needs: the backend is long-lived Express with load-bearing
 process state (10-min BSD, 24h insight/crest caches, boot search warmup), so
