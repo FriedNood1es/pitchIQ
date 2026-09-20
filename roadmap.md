@@ -27,6 +27,19 @@ budget bump (350 → 1500 — reasoning models spend tokens thinking before the
 `content` field fills). Verified live: `insightGeneratedBy=ai` with
 model-written prose; failures still fall back to the template.
 
+## 8af. Crest matcher: aliases, ø fix, reverse tiebreak ✅ DONE (2026-09-20)
+BSD names carry affixes ESPN drops ("FC Barcelona", "Levante UD") and a few
+clubs differ entirely ("Real Racing Club" vs "Racing Santander", "Inter" vs
+"Internazionale", München/Munich, Köln/Cologne). `crests.ts` now: explicit
+ø/Ø/ł/Ł pre-normalization (no NFD decomposition exists — "Bodø/Glimt" lost
+its `o`), a 14-entry BSD→ESPN ALIAS map for unbridgeable names, and a reverse-
+containment tiebreak preferring candidates whose extra BSD tokens are all
+generic affixes ("Deportivo Alavés" → "Alavés", not "Deportivo"). Verified
+with a node harness over all 133 BSD domestic names vs the merged 216-team
+ESPN list: 117 match, every hit the correct club, all 16 misses genuinely
+absent from ESPN's 2026/27-season snapshot (relegated sides, Girona/Mallorca/
+Oviedo). Euro cups stay sparse — different tournament editions, not a bug.
+
 ## 8ae. Full crest coverage (all 11 competitions, 264 badges) ✅ DONE (2026-09-20)
 Static snapshot graduated from the 10-team PL seed to every team ESPN lists:
 20/20/20/18/18 across Big-5, 36/36/36 across the three Euro cups, 18/18

@@ -35,6 +35,12 @@ const cacheKey = (competition: string) => `pitchiq:espn-teams:v2:${competition}`
 function tokens(s: string): string[] {
   return s
     .toLowerCase()
+    // ø/ł have no NFD decomposition — without this they strip entirely
+    // ("Bodø/Glimt" → "bod glimt" instead of "bodo glimt").
+    .replace(/ø/g, "o")
+    .replace(/Ø/g, "O")
+    .replace(/ł/g, "l")
+    .replace(/Ł/g, "L")
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/&/g, " and ")
@@ -105,21 +111,70 @@ async function loadLeague(competition: string): Promise<EspnTeam[]> {
 }
 
 /**
- * BSD display name -> badge URL. Exact, then normalized equality, then
- * unique one-directional token containment ("Newcastle" ⊂ "Newcastle
- * United" — never the reverse, which would match unrelated clubs sharing a
- * word). Anything ambiguous returns undefined: monogram, not a wrong badge.
+ * BSD display name -> badge URL. Exact (after aliasing), then normalized
+ * equality, then unique token containment either way ("Newcastle" ⊂
+ * "Newcastle United" forward; "FC Barcelona" ⊃ "Barcelona" reverse, since
+ * BSD adds affixes ESPN drops). An ambiguous reverse match prefers the
+ * candidate whose extra BSD tokens are all generic club-type affixes
+ * ("Deportivo Alavés" → "Alavés", not "Deportivo"). Anything still
+ * ambiguous returns undefined: monogram, not a wrong badge.
+ *
+ * Keys/values are normalized token strings (see tokens()).
  */
+const ALIAS: Record<string, string> = {
+  "real racing club": "racing santander",
+  "fc bayern munchen": "bayern munich",
+  "1 fc koln": "fc cologne",
+  "borussia m gladbach": "borussia monchengladbach",
+  "hamburger sv": "hamburg sv",
+  inter: "internazionale",
+  "olympique lyonnais": "lyon",
+  "stade brestois": "brest",
+  "sk slavia praha": "slavia prague",
+  "afc ajax": "ajax amsterdam",
+  "fc kobenhavn": "f c kobenhavn",
+  "cd nacional": "c d nacional",
+  "vitoria sc": "vitoria de guimaraes",
+  "red bull salzburg": "rb salzburg",
+};
+
+/** Generic affixes that carry no identity ("FC", "Real", "UD", ...). */
+const AFFIX = new Set([
+  "1", "f", "c", "d", "fc", "cf", "ac", "as", "sc", "rc", "sv", "ud", "cd",
+  "ss", "ssc", "sk", "afc", "real", "deportivo", "de", "st", "vfb", "vfl",
+  "tsg", "psv", "rb", "aj",
+]);
+
 export function findCrestURL(teams: EspnTeam[], name: string): string | undefined {
   const norm = tokens(name).join(" ");
-  const exact = teams.find((t) => tokens(t.name).join(" ") === norm);
+  const want = tokens(ALIAS[norm] ?? name);
+  const wantNorm = want.join(" ");
+  const exact = teams.find((t) => tokens(t.name).join(" ") === wantNorm);
   if (exact) return exact.url;
-  const want = tokens(name);
-  const cands = teams.filter((t) => {
+  // Forward: BSD name is a subset of the ESPN name ("Newcastle" ⊂ "Newcastle United").
+  const fwd = teams.filter((t) => {
     const have = new Set(tokens(t.name));
     return want.length > 0 && want.every((w) => have.has(w));
   });
-  if (cands.length === 1) return cands[0].url;
+  if (fwd.length === 1) return fwd[0].url;
+  // Reverse: ESPN name is a subset of the BSD name — BSD adds affixes ESPN
+  // drops ("FC Barcelona" ⊃ "Barcelona"). Same uniqueness guard applies.
+  const wantSet = new Set(want);
+  const rev = teams.filter((t) => {
+    const have = tokens(t.name);
+    return have.length > 0 && have.every((w) => wantSet.has(w));
+  });
+  if (rev.length === 1) return rev[0].url;
+  // Ambiguous reverse (e.g. "Deportivo Alavés" matches both "Alavés" and
+  // "Deportivo"): keep candidates whose extra BSD tokens are all affixes.
+  if (rev.length > 1) {
+    const specific = rev.filter((t) => {
+      const have = new Set(tokens(t.name));
+      const extra = want.filter((w) => !have.has(w));
+      return extra.length > 0 && extra.every((w) => AFFIX.has(w));
+    });
+    if (specific.length === 1) return specific[0].url;
+  }
   return undefined;
 }
 
