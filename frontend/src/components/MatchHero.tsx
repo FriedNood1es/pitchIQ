@@ -10,6 +10,8 @@ interface Props {
   teamA: TeamStats;
   teamB: TeamStats;
   edge: DataEdge;
+  /** Actual final score when opened from a finished fixture — shown center-hero. */
+  result?: { homeScore: number; awayScore: number; date: string };
 }
 
 const ANCHORS = [
@@ -84,15 +86,9 @@ function TeamBlock({
  * with the top reasons beneath; anchor chips stick on desktop so the long
  * evidence scroll stays reachable.
  */
-export function MatchHero({ competitionName, competition, teamA, teamB, edge }: Props) {
+export function MatchHero({ competitionName, competition, teamA, teamB, edge, result }: Props) {
   const leaderName =
     edge.leader === "A" ? teamA.name : edge.leader === "B" ? teamB.name : null;
-  const leaderColor =
-    edge.leader === "A"
-      ? "var(--team-a)"
-      : edge.leader === "B"
-        ? "var(--team-b)"
-        : "var(--muted)";
   const v = Math.round(edge.value);
   const valueLabel = v === 0 ? "0" : v > 0 ? `+${v}` : `${v}`;
   const call = leaderName ? `${leaderName} to win` : "Too close to call";
@@ -112,17 +108,19 @@ export function MatchHero({ competitionName, competition, teamA, teamB, edge }: 
           muted={edge.leader === "B"}
           competition={competition}
         />
-        <div
-          className="flex flex-col items-center px-2 pt-1"
-          aria-label={`Projected score ${edge.score.a} to ${edge.score.b}`}
-        >
-          <span aria-hidden="true" className="text-2xl font-extrabold tabular-nums" style={{ color: leaderColor }}>
-            {edge.score.a}–{edge.score.b}
-          </span>
-          <span aria-hidden="true" className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
-            Projected
-          </span>
-        </div>
+        {result && (
+          <div
+            className="flex flex-col items-center px-2 pt-1"
+            aria-label={`Full-time score ${teamA.name} ${result.homeScore}, ${teamB.name} ${result.awayScore}`}
+          >
+            <span aria-hidden="true" className="text-2xl font-extrabold tabular-nums" style={{ color: "var(--text)" }}>
+              {result.homeScore}–{result.awayScore}
+            </span>
+            <span aria-hidden="true" className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
+              Full-time
+            </span>
+          </div>
+        )}
         <TeamBlock
           team={teamB}
           seriesColor="var(--team-b)"
@@ -154,15 +152,16 @@ export function MatchHero({ competitionName, competition, teamA, teamB, edge }: 
  * stickiness: the mobile header wraps taller than the 80px offset, so a
  * stuck bar would slide underneath it.
  */
-export function HeroAnchors() {
+export function HeroAnchors({ showPrediction = true }: { showPrediction?: boolean }) {
   const [current, setCurrent] = useState<string | null>(null);
+  const anchors = showPrediction ? ANCHORS : ANCHORS.filter(([id]) => id !== "compare-prediction");
   return (
     <nav
       aria-label="Report sections"
       className="tl-card z-10 flex gap-1.5 overflow-x-auto px-3 py-2 lg:sticky"
       style={{ top: "80px" }}
     >
-      {ANCHORS.map(([id, label]) => (
+      {anchors.map(([id, label]) => (
         <button
           key={id}
           type="button"

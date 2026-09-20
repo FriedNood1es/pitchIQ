@@ -47,11 +47,8 @@ export function HeadToHeadPanel({ headToHead, teamA, teamAName, teamBName }: Pro
           const rightWon = m.awayGoals > m.homeGoals;
 
           return (
-            <li key={i} className="py-2.5 text-sm">
-              <span className="block text-xs text-[var(--muted)]">
-                {formatDate(m.date)}
-              </span>
-              <span className="mt-0.5 block font-medium text-[var(--text-2)]">
+            <li key={i} className="flex items-baseline gap-2 py-2 text-sm">
+              <span className="min-w-0 flex-1 truncate font-medium text-[var(--text-2)]">
                 <span style={{ fontWeight: leftWon ? 700 : 400, color: leftWon ? "var(--text)" : undefined }}>
                   {aHome ? teamAName : teamBName}
                 </span>
@@ -61,6 +58,9 @@ export function HeadToHeadPanel({ headToHead, teamA, teamAName, teamBName }: Pro
                 <span style={{ fontWeight: rightWon ? 700 : 400, color: rightWon ? "var(--text)" : undefined }}>
                   {aHome ? teamBName : teamAName}
                 </span>
+              </span>
+              <span className="shrink-0 whitespace-nowrap text-xs text-[var(--muted)]">
+                {formatDate(m.date)}
               </span>
             </li>
           );

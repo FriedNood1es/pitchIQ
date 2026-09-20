@@ -15,7 +15,7 @@ export async function runCompareOrchestrator(
   const intent = runIntentAgent(request);
   const retrieved = await runDataRetrievalAgent(intent);
   const validated = runDataValidationAgent(retrieved);
-  const insight = await runInsightAgent(validated, llm);
+  const insight = await runInsightAgent(validated, llm, intent.competition);
   const news = await runNewsAgent(intent);
   const visualization = runVisualizationAgent(validated);
 

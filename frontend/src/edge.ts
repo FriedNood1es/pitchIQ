@@ -8,9 +8,6 @@ export interface DataEdge {
   strength: "Toss-up" | "Lean" | "Edge";
   /** Strongest contributors first, at most 2, plain words. */
   reasons: string[];
-  /** Projected scoreline from scoring/conceding averages — a labeled
-   * estimate in the possession tradition, not model output. */
-  score: { a: number; b: number };
 }
 
 const formPoints: Record<string, number> = { W: 3, D: 1, L: 0 };
@@ -90,13 +87,5 @@ export function computeEdge(report: CompareReport): DataEdge {
         return `${name} ${p.short} +${Math.abs(Math.round(p.v))}`;
       })
     : top.map((p) => p.full);
-  // Classic averages projection: each side scores its own rate and concedes
-  // the opponent's. Rounded, labeled "projected" at every display site.
-  const pa = Math.max(1, a.played);
-  const pb = Math.max(1, b.played);
-  const score = {
-    a: Math.max(0, Math.round((a.goalsFor / pa + b.goalsAgainst / pb) / 2)),
-    b: Math.max(0, Math.round((b.goalsFor / pb + a.goalsAgainst / pa) / 2)),
-  };
-  return { value: Math.round(value * 10) / 10, leader, strength, reasons, score };
+  return { value: Math.round(value * 10) / 10, leader, strength, reasons };
 }

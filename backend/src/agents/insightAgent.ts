@@ -190,15 +190,54 @@ function parsePrediction(raw: string): { summary: string; prediction: Prediction
   }
 }
 
+/**
+ * AI insight cache — one LLM call per pairing, not per page load. Stats/H2H
+ * come from the pinned completed season (static), so the key only needs the
+ * volatile input (injury names) alongside the pairing. 24h TTL is safe: an
+ * injury change alters the key and misses. Template results are free and
+ * never cached, so a transient LLM failure doesn't pin the fallback for a day.
+ * ponytail: in-process Map, per-instance dedupe only; shared store if multi-instance.
+ */
+const INSIGHT_TTL_MS = 1000 * 60 * 60 * 24;
+const INSIGHT_MAX_ENTRIES = 500;
+const insightCache = new Map<string, { expires: number; result: InsightResult }>();
+
+function insightKey(competition: string, data: ValidatedData): { key: string; flipped: boolean } {
+  const a = data.teamA.stats.teamId;
+  const b = data.teamB.stats.teamId;
+  const sorted = [a, b].sort();
+  const injuries = [...data.teamA.injuries, ...data.teamB.injuries]
+    .map((i) => i.playerName)
+    .sort()
+    .join("|");
+  return {
+    key: `${competition}|${sorted[0]}|${sorted[1]}|${injuries}`,
+    flipped: a !== sorted[0],
+  };
+}
+
+function flipForOrder(result: InsightResult, flipped: boolean): InsightResult {
+  if (!flipped) return result;
+  const p = result.prediction;
+  return { ...result, prediction: { ...p, homeWin: p.awayWin, awayWin: p.homeWin } };
+}
+
 export async function runInsightAgent(
   data: ValidatedData,
-  llm: LLMClient
+  llm: LLMClient,
+  competition = ""
 ): Promise<InsightResult> {
   const template = buildTemplatedInsight(data);
   const fallback = buildDeterministicPrediction(data);
 
   if (llm.kind === "template") {
     return { summary: template, prediction: fallback, generatedBy: "template" };
+  }
+
+  const { key, flipped } = insightKey(competition, data);
+  const cached = insightCache.get(key);
+  if (cached && cached.expires > Date.now()) {
+    return flipForOrder(cached.result, flipped);
   }
 
   try {
@@ -208,7 +247,17 @@ export async function runInsightAgent(
     const end = raw.lastIndexOf("}");
     const parsed = start >= 0 && end > start ? parsePrediction(raw.slice(start, end + 1)) : null;
     if (!parsed) throw new Error("LLM returned malformed prediction JSON");
-    return { summary: parsed.summary, prediction: parsed.prediction, generatedBy: "ai" };
+    const result: InsightResult = { summary: parsed.summary, prediction: parsed.prediction, generatedBy: "ai" };
+    if (insightCache.size >= INSIGHT_MAX_ENTRIES) {
+      const oldest = insightCache.keys().next();
+      if (!oldest.done) insightCache.delete(oldest.value);
+    }
+    // Store in normalized (sorted) orientation; flip on read when needed.
+    insightCache.set(key, {
+      expires: Date.now() + INSIGHT_TTL_MS,
+      result: flipped ? flipForOrder(result, true) : result,
+    });
+    return result;
   } catch (err) {
     console.warn(`[insightAgent] LLM unavailable, using template: ${errMsg(err)}`);
     return { summary: template, prediction: fallback, generatedBy: "template" };

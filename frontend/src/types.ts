@@ -71,6 +71,8 @@ export interface NewsItem {
   source?: string;
   url?: string;
   kind?: "news" | "tweet";
+  /** Third-party story artwork — may be absent or dead; rows degrade to text. */
+  thumbnail?: string;
 }
 
 export interface RadarDataset {

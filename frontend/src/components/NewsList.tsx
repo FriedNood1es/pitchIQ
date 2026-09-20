@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NewsItem } from "../types";
 
 interface Props {
@@ -21,12 +22,16 @@ export function formatWhen(publishedAt: string): string {
 }
 
 function NewsEntry({ item }: { item: NewsItem }) {
+  // Third-party artwork dies often — a failed load drops the frame and the
+  // row collapses to the text layout with no shift for siblings.
+  const [imgOk, setImgOk] = useState(true);
+  const showThumb = Boolean(item.thumbnail) && imgOk;
   const meta = [item.source, formatWhen(item.publishedAt)]
     .filter(Boolean)
     .join(" · ");
 
   const body = (
-    <>
+    <span className="min-w-0 flex-1">
       <p className="font-medium text-[var(--text)]">
         {item.kind === "tweet" && (
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" className="mr-1.5 inline-block align-baseline text-[var(--muted)]">
@@ -37,6 +42,21 @@ function NewsEntry({ item }: { item: NewsItem }) {
       </p>
       {item.summary && <p className="text-[var(--text-2)]">{item.summary}</p>}
       <p className="mt-0.5 text-xs text-[var(--muted)]">{meta}</p>
+    </span>
+  );
+
+  const row = (
+    <>
+      {showThumb && (
+        <img
+          src={item.thumbnail}
+          alt=""
+          loading="lazy"
+          onError={() => setImgOk(false)}
+          className="h-[72px] w-28 shrink-0 rounded-lg object-cover"
+        />
+      )}
+      {body}
     </>
   );
 
@@ -50,12 +70,12 @@ function NewsEntry({ item }: { item: NewsItem }) {
           href={item.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="block transition-opacity hover:opacity-80"
+          className={`transition-opacity hover:opacity-80 ${showThumb ? "flex gap-3" : "block"}`}
         >
-          {body}
+          {row}
         </a>
       ) : (
-        body
+        <span className={showThumb ? "flex gap-3" : "block"}>{row}</span>
       )}
     </li>
   );
@@ -97,10 +117,23 @@ function isFresh(publishedAt: string): boolean {
 }
 
 export function NewsList({ teamAName, teamBName, teamANews, teamBNews }: Props) {
-  const top = [...teamANews, ...teamBNews].find((i) => i.headline);
   const hasFresh = [...teamANews, ...teamBNews].some((i) => isFresh(i.publishedAt));
+  // User toggle takes over from the fresh-default on first interaction (also
+  // stops a manually-closed feed snapping back open on the next render).
+  const [open, setOpen] = useState<boolean | null>(null);
+  const expanded = open ?? hasFresh;
+  // Closed preview: latest headlined item per club with a two-line body
+  // snippet (tweets carry the post in the headline, so they show no snippet).
+  const preview = [
+    { name: teamAName, color: "var(--team-a)", item: teamANews.find((i) => i.headline) },
+    { name: teamBName, color: "var(--team-b)", item: teamBNews.find((i) => i.headline) },
+  ].filter((r): r is { name: string; color: string; item: NewsItem } => Boolean(r.item));
   return (
-    <details className="tl-card px-5 py-4" open={hasFresh}>
+    <details
+      className="tl-card px-5 py-4"
+      open={expanded}
+      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
+    >
       <summary className="cursor-pointer">
         <span className="tl-card-title">
           Latest News{" "}
@@ -108,10 +141,24 @@ export function NewsList({ teamAName, teamBName, teamANews, teamBNews }: Props) 
             ({teamANews.length} · {teamBNews.length})
           </span>
         </span>
-        {top && (
-          <span className="mt-1 block truncate text-sm font-medium normal-case tracking-normal text-[var(--text-2)]">
-            {top.headline}{" "}
-            <span className="text-xs text-[var(--muted)]">· {formatWhen(top.publishedAt)}</span>
+        {!expanded && preview.length > 0 && (
+          <span className="mt-2 block space-y-2 normal-case tracking-normal">
+            {preview.map((r) => (
+              <span key={r.name} className="block">
+                <span className="flex items-baseline gap-1.5 text-sm font-medium text-[var(--text)]">
+                  <span aria-hidden="true" className="h-2 w-2 shrink-0 self-center rounded-full" style={{ background: r.color }} />
+                  <span className="min-w-0 flex-1 truncate">{r.item.headline}</span>
+                  <span className="shrink-0 text-xs font-normal text-[var(--muted)]">
+                    {formatWhen(r.item.publishedAt)}
+                  </span>
+                </span>
+                {r.item.summary && (
+                  <span className="mt-0.5 block pl-3.5 text-sm font-normal text-[var(--text-2)] line-clamp-2">
+                    {r.item.summary}
+                  </span>
+                )}
+              </span>
+            ))}
           </span>
         )}
       </summary>

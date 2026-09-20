@@ -43,9 +43,12 @@ export function RadarChart({ labels, datasets }: Props) {
     })),
   };
 
+  // Always open: since §8an it sits beside Head-to-Head in a desktop grid,
+  // where a collapsed strip would unbalance the pair — and the grid already
+  // pays the vertical space the disclosure used to save.
   return (
-    <details className="tl-card px-5 py-4">
-      <summary className="tl-card-title cursor-pointer">Rating Profile</summary>
+    <div className="tl-card p-5">
+      <h2 className="tl-card-title">Rating Profile</h2>
       <table className="sr-only">
         <caption>Rating profile values by team</caption>
         <thead>
@@ -67,7 +70,7 @@ export function RadarChart({ labels, datasets }: Props) {
           ))}
         </tbody>
       </table>
-      <div className="mt-2 h-72 sm:h-80">
+      <div className="mt-2 h-72">
         <Radar
           data={data}
           options={{
@@ -88,6 +91,6 @@ export function RadarChart({ labels, datasets }: Props) {
           }}
         />
       </div>
-    </details>
+    </div>
   );
 }

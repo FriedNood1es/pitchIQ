@@ -66,11 +66,13 @@ export interface NewsItem {
   teamId: TeamId;
   headline: string;
   summary: string;
-  publishedAt: string;
+  publishedAt: string; // ISO 8601
   /** Outlet name for press items, club/account name for tweets. */
   source?: string;
   url?: string;
   kind?: "news" | "tweet";
+  /** Third-party story artwork (BSD `thumbnail`) — absent on tweets. May die; UI must degrade. */
+  thumbnail?: string;
 }
 
 export interface RetrievedTeamData {

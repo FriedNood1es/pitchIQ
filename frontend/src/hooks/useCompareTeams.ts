@@ -12,5 +12,8 @@ export function useCompareTeams(
     queryKey: ["compare", competition, teamA, teamB],
     queryFn: () => fetchComparison(competition, teamA, teamB),
     enabled,
+    // Pairing data is effectively static (pinned season); the backend also
+    // caches the LLM insight, so this just avoids refetch on tab switches.
+    staleTime: 1000 * 60 * 10,
   });
 }

@@ -29,8 +29,10 @@ const COMPETITIONS = [
 ];
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-// v2: v1 entries may hold empties cached during the direct-fetch era.
-const cacheKey = (competition: string) => `pitchiq:espn-teams:v2:${competition}`;
+// v3: v2 entries predate the full 264-team snapshot regen (Leeds et al.
+// missing from the old 10-team PL seed). Bump the version on every snapshot
+// regen, or stale league lists linger up to CACHE_TTL_MS.
+const cacheKey = (competition: string) => `pitchiq:espn-teams:v3:${competition}`;
 
 function tokens(s: string): string[] {
   return s

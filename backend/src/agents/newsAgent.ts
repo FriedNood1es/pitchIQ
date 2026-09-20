@@ -111,5 +111,8 @@ function toNewsItem(teamId: TeamId, item: BsdSocialItem): NewsItem | null {
     source: item.account_name || item.account_handle,
     url: item.url,
     kind: isTweet ? "tweet" : "news",
+    // Pass through only when present — tweets carry none, and an empty
+    // string must not render a broken frame downstream.
+    ...(item.thumbnail?.trim() ? { thumbnail: item.thumbnail.trim() } : {}),
   };
 }

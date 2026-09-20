@@ -134,6 +134,21 @@ export default function App() {
     awayName: string;
     homeId: TeamId;
     awayId: TeamId;
+    status: Fixture["status"];
+    homeScore: number | null;
+    awayScore: number | null;
+    date: string;
+  } | null>(null);
+  /**
+   * The finished/live/scheduled context of the fixture row a compare was
+   * opened from. Picker-driven compares and hash reloads carry none, so the
+   * report falls back to the prediction view. Cleared on any re-pick.
+   */
+  const [matchContext, setMatchContext] = useState<{
+    status: Fixture["status"];
+    homeScore: number | null;
+    awayScore: number | null;
+    date: string;
   } | null>(null);
   /** Event id of the tapped row, for pending feedback until slugs resolve. */
   const [pendingEventId, setPendingEventId] = useState<number | null>(null);
@@ -175,6 +190,7 @@ export default function App() {
     setMode(hashDraft.mode);
     setCompetition(hashDraft.competition);
     setHasCompared(false);
+    setMatchContext(null);
     setTeamA("");
     setTeamB("");
     setTeamSelection(
@@ -244,6 +260,12 @@ export default function App() {
       setTeamA(homeId);
       setTeamB(awayId);
       setHasCompared(true);
+      setMatchContext({
+        status: pendingCompare.status,
+        homeScore: pendingCompare.homeScore,
+        awayScore: pendingCompare.awayScore,
+        date: pendingCompare.date,
+      });
       setMode("compare");
       writeHash({ mode: "compare", competition, teamA: homeId, teamB: awayId });
       return;
@@ -320,6 +342,7 @@ export default function App() {
       setTeamA("");
       setTeamB("");
       setHasCompared(false);
+      setMatchContext(null);
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -356,8 +379,20 @@ export default function App() {
     pendingNames.current = a && b ? { a, b } : null;
     setCompetition(id);
     setHasCompared(false);
+    setMatchContext(null);
     setTeamA("");
     setTeamB("");
+  }
+
+  /** Picker re-picks invalidate the fixture result the report was opened from. */
+  function handleChangeTeamA(id: TeamId) {
+    setMatchContext(null);
+    setTeamA(id);
+  }
+
+  function handleChangeTeamB(id: TeamId) {
+    setMatchContext(null);
+    setTeamB(id);
   }
 
   function handleCompare() {
@@ -383,12 +418,17 @@ export default function App() {
       awayName: fixture.awayTeam.name,
       homeId: fixture.homeTeam.id,
       awayId: fixture.awayTeam.id,
+      status: fixture.status,
+      homeScore: fixture.homeScore,
+      awayScore: fixture.awayScore,
+      date: fixture.date,
     });
   }
 
   /** Search result -> the team's dashboard (Preview / Stats / Matches). */
   function handleSelectTeam(result: TeamSearchResult) {
     setHasCompared(false);
+    setMatchContext(null);
     setFallbackNotice(null);
     setPendingEventId(null);
     setTeamA("");
@@ -405,6 +445,7 @@ export default function App() {
     setFallbackNotice(null);
     setPendingEventId(null);
     setMode("fixtures");
+    setMatchContext(null);
     setHasCompared(false);
     setTeamA("");
     setTeamB("");
@@ -415,6 +456,7 @@ export default function App() {
     setTeamSelection(null);
     setFallbackNotice(null);
     setPendingEventId(null);
+    setMatchContext(null);
     setHasCompared(false);
     setTeamA("");
     setTeamB("");
@@ -427,6 +469,15 @@ export default function App() {
   const reportKey = report
     ? `${report.intent.competition}/${report.teams.teamA.stats.teamId}-${report.teams.teamB.stats.teamId}`
     : "";
+  // Opened from a finished row with a known score: the game is decided, so
+  // the report shows the result instead of a prediction. teamA/teamB preserve
+  // the fixture's home/away order (any re-pick clears the context above).
+  const finishedResult =
+    matchContext?.status === "finished" &&
+    matchContext.homeScore != null &&
+    matchContext.awayScore != null
+      ? { homeScore: matchContext.homeScore, awayScore: matchContext.awayScore, date: matchContext.date }
+      : undefined;
 
   const competitionName =
     competitions?.find((c) => c.id === (report?.intent.competition ?? competition))?.name ?? "";
@@ -464,8 +515,8 @@ export default function App() {
           teamA={teamA}
           teamB={teamB}
           onChangeCompetition={handleChangeCompetition}
-          onChangeTeamA={setTeamA}
-          onChangeTeamB={setTeamB}
+          onChangeTeamA={handleChangeTeamA}
+          onChangeTeamB={handleChangeTeamB}
           onCompare={handleCompare}
           isLoading={isFetching}
         />
@@ -548,8 +599,8 @@ export default function App() {
             teamA={teamA}
             teamB={teamB}
             onChangeCompetition={handleChangeCompetition}
-            onChangeTeamA={setTeamA}
-            onChangeTeamB={setTeamB}
+            onChangeTeamA={handleChangeTeamA}
+            onChangeTeamB={handleChangeTeamB}
             onCompare={handleCompare}
             isLoading={isFetching}
           />
@@ -605,19 +656,22 @@ export default function App() {
                 teamA={report.teams.teamA.stats}
                 teamB={report.teams.teamB.stats}
                 edge={computeEdge(report)}
+                result={finishedResult}
               />
             </div>
-            <HeroAnchors />
-            <div className="tl-reveal tl-reveal-delay-1">
-              <PredictionBar
-                teamA={report.teams.teamA.stats.name}
-                teamB={report.teams.teamB.stats.name}
-                prediction={report.prediction}
-                generatedBy={report.insightGeneratedBy}
-                insight={report.insight}
-                generatedAt={report.generatedAt}
-              />
-            </div>
+            <HeroAnchors showPrediction={!finishedResult} />
+            {!finishedResult && (
+              <div className="tl-reveal tl-reveal-delay-1">
+                <PredictionBar
+                  teamA={report.teams.teamA.stats.name}
+                  teamB={report.teams.teamB.stats.name}
+                  prediction={report.prediction}
+                  generatedBy={report.insightGeneratedBy}
+                  insight={report.insight}
+                  generatedAt={report.generatedAt}
+                />
+              </div>
+            )}
             <div id="compare-stats" className="scroll-mt-24">
               <StatComparison
                 rows={buildStatRows(report.teams.teamA.stats, report.teams.teamB.stats)}
@@ -635,19 +689,24 @@ export default function App() {
                 teamBInjuries={report.teams.teamB.injuries}
               />
             </div>
-            <div id="compare-h2h" className="scroll-mt-24">
-              <HeadToHeadPanel
-                headToHead={report.headToHead}
-                teamA={report.intent.teamA}
-                teamAName={report.teams.teamA.stats.name}
-                teamBName={report.teams.teamB.stats.name}
-              />
-            </div>
-            <div id="compare-chart" className="scroll-mt-24">
-              <RadarChart
-                labels={report.visualization.radar.labels}
-                datasets={report.visualization.radar.datasets}
-              />
+            {/* H2H + radar share a row on desktop (stacked on mobile); a stub
+                H2H beside a full radar would just re-create the lopsidedness,
+                so the grid applies only when there are meetings to show. */}
+            <div className={report.headToHead.length > 0 ? "grid gap-5 sm:grid-cols-2" : "contents"}>
+              <div id="compare-h2h" className="scroll-mt-24">
+                <HeadToHeadPanel
+                  headToHead={report.headToHead}
+                  teamA={report.intent.teamA}
+                  teamAName={report.teams.teamA.stats.name}
+                  teamBName={report.teams.teamB.stats.name}
+                />
+              </div>
+              <div id="compare-chart" className="scroll-mt-24">
+                <RadarChart
+                  labels={report.visualization.radar.labels}
+                  datasets={report.visualization.radar.datasets}
+                />
+              </div>
             </div>
             <div id="compare-news" className="scroll-mt-24">
               <NewsList

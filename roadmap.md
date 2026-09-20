@@ -1,6 +1,76 @@
 # PitchIQ — Roadmap
 
-_Last updated: 2026-09-17_
+_Last updated: 2026-09-20_
+
+## 8aq. News thumbnails in the open list ✅ DONE (2026-09-20)
+BSD story artwork (`thumbnail`, previously dropped) now flows through
+`NewsItem` to thumbnail-left rows in the expanded list (112×72, rounded,
+lazy, error-hidden → text row). Tweets/imageless items keep the text layout;
+closed preview stays text snippets. Live probe Betis–Osasuna: 6/6 items,
+Betis tweets carry `pbs.twimg.com` thumbs, Osasuna none (fallback path
+confirmed). Both builds green. Noted: BSD text shows mojibake on some emoji
+(pre-existing, upstream).
+
+## 8ap. News preview: per-team content snippets ✅ DONE (2026-09-20)
+The closed Latest News section now previews each club's latest item: team
+dot + headline + relative time, plus the post body clamped to two lines
+(tweets show headline only — the post text already is the headline). Preview
+rows hide once expanded (they duplicated the first items), and the user
+toggle now owns the open state instead of snapping back on re-render.
+`line-clamp-2` verified emitted in the bundle. Both builds green.
+
+## 8ao. News preview shows the truly freshest story ✅ DONE (2026-09-20)
+The closed Latest News preview took team A's latest before team B's, so a
+fresher rival story lost to a stale one. It now picks the newest headlined
+item across both feeds, attributed (`Team: headline · source · 2h ago`).
+Both builds green.
+
+## 8an. H2H + radar side-by-side on desktop ✅ DONE (2026-09-20)
+H2H rows were two lines with dead space on the right. Rows are now one line
+(matchup truncate + winner bold left, date right, tighter padding); H2H and
+Rating Profile share an `sm:grid-cols-2` row (stacked on mobile, anchor ids
+preserved). The radar's collapse disclosure became a static card — in a grid
+it would unbalance the pair, and the grid already pays the space it saved.
+Empty-H2H pairings stack as before (`contents` fallback). Both builds green.
+
+## 8am. Projected scoreline removed (self-contradicting verdict) ✅ DONE (2026-09-20)
+Betis–Osasuna showed "Real Betis to win" beside a projected 1–1: the verdict
+(edge weights, +28.8) and the scoreline (goal averages 1.43 vs 1.21, both
+rounding to 1) were independent formulas sharing a card. The projection is
+gone from `MatchHero` (center now renders only for finished fixtures' FT
+score); `DataEdge.score` and its computation removed. Sweep: hero verdict and
+deterministic fallback share weights (consistent by construction); the AI bar
+can still differ from the hero, which is legitimate signal (e.g. injuries),
+not a second deterministic verdict. Both builds green.
+
+## 8al. Finished rows open a result view, not a prediction ✅ DONE (2026-09-20)
+Tapping a finished row showed a prediction (probabilities + "Projected"
+scoreline) for a decided game — the FT score was dropped at navigation.
+`pendingCompare` now carries the fixture's status/score/date into a session
+`matchContext`; a finished context swaps the hero center to the actual FT
+score ("Full-time") and hides `PredictionBar` + its anchor chip. Any re-pick,
+competition switch, hash load or home/back clears the context, and finished
+rows with null scores fall back to the prediction view. Frontend-only; both
+builds green.
+
+## 8ak. Leeds crest: poisoned 7-day browser cache ✅ DONE (2026-09-20)
+Arsenal–Leeds scheduled PL row showed Arsenal's badge but a Leeds monogram.
+Data was fine (backend serves Leeds United/357; BSD names it identically, so
+the matcher exact-hits). Cause: `crests.ts` caches each league list 7 days
+with no invalidation on snapshot regen — visits since §8ad held the old
+10-team PL seed with no Leeds. Fix: cache key v2→v3 (one line), shedding
+everyone's stale entries on next load. Discipline: bump the key version with
+every `fetch-espn-crests` regen, or this ghost recurs.
+
+## 8aj. Insight cache: reloads no longer burn LLM tokens ✅ DONE (2026-09-20)
+Reloading `#/compare/...` re-ran the Groq call (`temperature 0.7`) — new text
+every refresh, billed every refresh. `runInsightAgent` now keeps a 24h
+in-process cache keyed `competition|sorted teams|sorted injury names`
+(order-normalized, A-vs-B hits B-vs-A with home/away probs swapped).
+Template fallback stays uncached (free; a transient LLM failure must not pin
+it for a day). `useCompareTeams` gained a 10-min `staleTime` to skip
+in-session refetch. Verified: both builds green + node harness (same pair 1
+call, flipped order 1 call with swapped probs, new competition/injuries miss).
 
 ## OPEN — unfinished business
 - [ ] **Crest eyeball on an unblocked network.** Pipeline is verified to the
@@ -8,9 +78,9 @@ _Last updated: 2026-09-17_
   tether 5 min to warm caches, or check after deploy.
 - [ ] **Rotate the Groq key.** It lived in chat history, shell history, and
   `.env` logs — rotate in the Groq console, update `backend/.env`.
-- [ ] **Commit the pile.** Uncommitted since `4bf86c7`: crest proxy
-  (`espnClient`, `/api/crests`, `crests.ts`, `TeamCrest` overlay + wiring),
-  Groq token budget, recent compare fixes. Commit before switching machines.
+- [x] **Commit the pile.** Committed: insight cache, finished-result view,
+  projected-score removal, H2H/radar grid, news snippets + thumbnails, crest
+  v3 key (see §§8aj–8aq).
 - [ ] **Dark logo variant.** ESPN serves `500-dark/` artwork per team; prefer
   it under the dark theme (needs theme-aware picking in `TeamCrest`).
 - [ ] **Decide on strays.** `frontend/src/icons/` (unreferenced SVG) and
