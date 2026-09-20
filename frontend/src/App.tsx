@@ -1,14 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { ComparePicker } from "./components/ComparePicker";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { computeEdge } from "./edge";
+import { computeEdge, points } from "./edge";
 import { FixturesView } from "./components/FixturesView";
 import { HeadToHeadPanel } from "./components/HeadToHeadPanel";
 import { LineupPanel } from "./components/LineupPanel";
 import { HeroAnchors, MatchHero } from "./components/MatchHero";
 import { NewsList } from "./components/NewsList";
 import { PredictionBar } from "./components/PredictionBar";
-import { RadarChart } from "./components/RadarChart";
 import { ReportSkeleton } from "./components/Skeletons";
 import { StatComparison, StatRow } from "./components/StatComparison";
 import { TeamSearchBox } from "./components/TeamSearchBox";
@@ -20,6 +19,10 @@ import { useTeams } from "./hooks/useTeams";
 import { useTheme } from "./hooks/useTheme";
 import { parseHash, writeHash, ViewMode } from "./hash";
 import { Fixture, FixturesStatus, TeamId, TeamSearchResult, TeamStats } from "./types";
+
+// chart.js rides in its own chunk — the radar is a below-fold card, so the
+// initial bundle stays lean until a comparison actually renders it.
+const RadarChart = lazy(() => import("./components/RadarChart"));
 
 /** Lowercase, strip diacritics (Málaga -> Malaga), keep [a-z0-9]. */
 function normalizeName(name: string): string {
@@ -55,7 +58,6 @@ function resolveTeam(
 }
 
 function buildStatRows(a: TeamStats, b: TeamStats): StatRow[] {
-  const pts = (t: TeamStats) => t.wins * 3 + t.draws;
   // Football-word gap ("Arsenal ahead by 8", omitted when level). Conceded
   // inverts: fewer is better.
   const gap = (
@@ -70,7 +72,7 @@ function buildStatRows(a: TeamStats, b: TeamStats): StatRow[] {
     return `${leader} ahead by ${Math.abs(Math.round(d))}${unit}`;
   };
   return [
-    { label: "Points", a: pts(a), b: pts(b), delta: gap(pts(a), pts(b)) },
+    { label: "Points", a: points(a), b: points(b), delta: gap(points(a), points(b)) },
     { label: "Attack", a: a.attackRating, b: b.attackRating, delta: gap(a.attackRating, b.attackRating) },
     { label: "Defense", a: a.defenseRating, b: b.defenseRating, delta: gap(a.defenseRating, b.defenseRating) },
     {
@@ -702,10 +704,18 @@ export default function App() {
                 />
               </div>
               <div id="compare-chart" className="scroll-mt-24">
-                <RadarChart
-                  labels={report.visualization.radar.labels}
-                  datasets={report.visualization.radar.datasets}
-                />
+                <Suspense
+                  fallback={
+                    <div className="tl-card p-5">
+                      <div className="tl-skeleton h-72" />
+                    </div>
+                  }
+                >
+                  <RadarChart
+                    labels={report.visualization.radar.labels}
+                    datasets={report.visualization.radar.datasets}
+                  />
+                </Suspense>
               </div>
             </div>
             <div id="compare-news" className="scroll-mt-24">

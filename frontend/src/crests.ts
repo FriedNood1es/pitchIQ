@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { apiBase } from "./api/client";
 
 /**
@@ -61,6 +61,25 @@ function isTeam(t: unknown): t is EspnTeam {
 const mem = new Map<string, EspnTeam[]>();
 const inflight = new Map<string, Promise<EspnTeam[]>>();
 
+// Version bumped whenever a league list lands — the single subscription
+// point for every TeamCrest, so N rows share one store instead of N merges.
+let crestVersion = 0;
+const crestListeners = new Set<() => void>();
+function bumpCrests(): void {
+  crestVersion++;
+  crestListeners.forEach((l) => l());
+}
+function subscribeCrests(cb: () => void): () => void {
+  crestListeners.add(cb);
+  return () => {
+    crestListeners.delete(cb);
+  };
+}
+function storeLeague(competition: string, teams: EspnTeam[]): void {
+  mem.set(competition, teams);
+  bumpCrests();
+}
+
 async function loadLeague(competition: string): Promise<EspnTeam[]> {
   const hit = mem.get(competition);
   if (hit) return hit;
@@ -74,7 +93,7 @@ async function loadLeague(competition: string): Promise<EspnTeam[]> {
         parsed.teams.every(isTeam) &&
         Date.now() - parsed.at < CACHE_TTL_MS
       ) {
-        mem.set(competition, parsed.teams);
+        storeLeague(competition, parsed.teams);
         return parsed.teams;
       }
     }
@@ -92,7 +111,7 @@ async function loadLeague(competition: string): Promise<EspnTeam[]> {
         const teams = Array.isArray(json) ? json.filter(isTeam) : [];
         // Never cache empties — a transient ESPN outage shouldn't poison a week.
         if (teams.length > 0) {
-          mem.set(competition, teams);
+          storeLeague(competition, teams);
           try {
             localStorage.setItem(
               cacheKey(competition),
@@ -182,31 +201,52 @@ export function findCrestURL(teams: EspnTeam[], name: string): string | undefine
 }
 
 /**
- * Badge teams for one competition, or all eleven when competition is "".
- * Null while loading; empty when unresolvable — both mean monograms.
+ * Badge URL for one club: competition list first, merged all-competition list
+ * as fallback (promoted clubs live in a different ESPN section than the BSD
+ * competition — Leeds: BSD Championship vs ESPN Premier League). Pure mem
+ * lookup; one shared store subscription re-renders rows as lists land.
+ * Omitted competition keeps the monogram.
  */
-export function useEspnTeams(competition: string): EspnTeam[] | null {
-  const [teams, setTeams] = useState<EspnTeam[] | null>(null);
+export function useCrestUrl(competition: string | undefined, name: string): string | undefined {
+  useSyncExternalStore(subscribeCrests, () => crestVersion);
   useEffect(() => {
-    let live = true;
-    const ids = competition ? [competition] : COMPETITIONS;
-    Promise.all(ids.map(loadLeague)).then((lists) => {
-      if (!live) return;
-      // Cross-league merges duplicate clubs (Arsenal domestic + cups) —
-      // dedupe by normalized name so containment stays unique.
-      const seen = new Set<string>();
-      const merged: EspnTeam[] = [];
-      for (const t of lists.flat()) {
-        const key = tokens(t.name).join(" ");
-        if (seen.has(key)) continue;
-        seen.add(key);
-        merged.push(t);
-      }
-      setTeams(merged);
-    });
-    return () => {
-      live = false;
-    };
+    if (competition && !mem.has(competition)) void loadLeague(competition);
   }, [competition]);
-  return teams;
+  if (!competition) return undefined;
+  return (
+    findCrestURL(mem.get(competition) ?? [], name) ??
+    findCrestURL(mem.get("") ?? [], name)
+  );
+}
+
+// Cross-league merges duplicate clubs (Arsenal domestic + cups) — dedupe by
+// normalized name so containment stays unique.
+function mergedTeams(): EspnTeam[] {
+  const seen = new Set<string>();
+  const merged: EspnTeam[] = [];
+  for (const id of COMPETITIONS) {
+    for (const t of mem.get(id) ?? []) {
+      const key = tokens(t.name).join(" ");
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(t);
+    }
+  }
+  return merged;
+}
+
+let mergedWarmed = false;
+
+/**
+ * Load every competition list once at boot (fire-and-forget, like the
+ * backend's warmSearchIndex) so rows subscribe to a warm store instead of
+ * each triggering their own fetch + 11-list merge.
+ */
+export function warmCrests(): void {
+  void Promise.all(COMPETITIONS.map((id) => loadLeague(id))).then(() => {
+    if (mergedWarmed) return;
+    mergedWarmed = true;
+    const merged = mergedTeams();
+    if (merged.length > 0) storeLeague("", merged);
+  });
 }

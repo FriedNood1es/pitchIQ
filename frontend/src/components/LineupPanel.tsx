@@ -12,7 +12,7 @@ interface Props {
 function PositionChip({ position }: { position: string }) {
   return (
     <span
-      className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+      className="rounded px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide"
       style={{ background: "var(--surface-3)", color: "var(--text-2)" }}
     >
       {position}
@@ -61,7 +61,7 @@ export function LineupSide({
             if (players.length === 0) return null;
             return (
               <div key={group}>
-                <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">
+                <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--muted)]">
                   <span>{group}</span>
                   <span className="h-px flex-1" style={{ background: "var(--border)" }} />
                 </div>
@@ -86,7 +86,7 @@ export function LineupSide({
                       </span>
                       {p.aiScore != null && (
                         <span
-                          className="shrink-0 text-[10px] font-bold tabular-nums text-[var(--brand)]"
+                          className="shrink-0 text-xs font-bold tabular-nums text-[var(--brand)]"
                           aria-label={`AI score ${p.aiScore} out of 100`}
                         >
                           {p.aiScore}
@@ -101,7 +101,7 @@ export function LineupSide({
 
           {lineup.substitutes.length > 0 && (
             <div className="pt-1">
-              <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">
+              <div className="mb-1 text-xs font-bold uppercase tracking-wide text-[var(--muted)]">
                 Bench
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -123,7 +123,7 @@ export function LineupSide({
 
       {injuries.length > 0 && (
         <div className="mt-4 border-t pt-3" style={{ borderColor: "var(--border)" }}>
-          <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--loss)" }}>
+          <div className="mb-1.5 text-xs font-bold uppercase tracking-wide" style={{ color: "var(--loss)" }}>
             Unavailable
           </div>
           <ul className="space-y-1">

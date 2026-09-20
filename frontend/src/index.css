@@ -180,11 +180,17 @@ body {
   transition: transform 0.25s ease;
 }
 
+/* Token-following row separators (divide-y can't take var() reliably). */
+.tl-divide > * + * {
+  border-top: 1px solid var(--border);
+}
+
 /* Accessible focus ring for every interactive control */
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+summary:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }

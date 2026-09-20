@@ -29,7 +29,7 @@ export function HeadToHeadPanel({ headToHead, teamA, teamAName, teamBName }: Pro
   return (
     <div className="tl-card p-5">
       <h2 className="tl-card-title">Head-to-Head</h2>
-      <ul className="mt-2 divide-y divide-[var(--border)]">
+      <ul className="mt-2 tl-divide">
         {headToHead.map((m, i) => {
           const aHome = m.homeTeam === teamA;
           // The left team name is always the home side, so homeGoals is its

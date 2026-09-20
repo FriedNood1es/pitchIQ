@@ -56,11 +56,11 @@ export function ComparePicker({
   if (layout === "bar") {
     return (
       <div className="border-b border-[var(--border)] bg-[var(--surface-2)] px-4 py-3">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-2">
+        <div className="mx-auto flex max-w-4xl flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <IconSelect
             label="Competition"
             size="sm"
-            className="w-40"
+            className="w-full sm:w-40"
             options={buildCompetitionOptions(competitions)}
             value={competition}
             disabled={competitions.length === 0}
@@ -69,17 +69,17 @@ export function ComparePicker({
           <IconSelect
             label="Home team"
             size="sm"
-            className="min-w-40 flex-1"
+            className="w-full sm:min-w-40 sm:flex-1"
             options={buildTeamOptions(teams, competition)}
             value={teamA}
             disabled={disabled}
             onChange={onChangeTeamA}
           />
-          <span className="text-xs font-bold text-[var(--muted)]">vs</span>
+          <span className="hidden text-xs font-bold text-[var(--muted)] sm:inline">vs</span>
           <IconSelect
             label="Away team"
             size="sm"
-            className="min-w-40 flex-1"
+            className="w-full sm:min-w-40 sm:flex-1"
             options={buildTeamOptions(teams, competition)}
             value={teamB}
             disabled={disabled}

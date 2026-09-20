@@ -84,7 +84,7 @@ export function StatComparison({ rows, teamAName, teamBName }: Props) {
           </span>
         </div>
       </div>
-      <div className="divide-y divide-[var(--border)]">
+      <div className="tl-divide">
         {rows.map((row) => (
           <Row key={row.label} row={row} />
         ))}

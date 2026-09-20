@@ -33,7 +33,7 @@ function LiveCell({ date }: { date: string }) {
   return (
     <>
       <span
-        className="flex items-center justify-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--on-color)]"
+        className="flex items-center justify-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-[var(--on-color)]"
         style={{ background: "var(--loss)" }}
       >
         <span className="relative flex h-1.5 w-1.5">

@@ -94,3 +94,6 @@ export function RadarChart({ labels, datasets }: Props) {
     </div>
   );
 }
+
+// Default export for React.lazy (App code-splits chart.js out of the bundle).
+export default RadarChart;

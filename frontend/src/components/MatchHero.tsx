@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DataEdge } from "../edge";
+import { DataEdge, points } from "../edge";
 import { TeamStats } from "../types";
 import { FormPills } from "./FormPills";
 import { TeamCrest } from "./TeamCrest";
@@ -28,10 +28,6 @@ function jump(id: string) {
   document
     .getElementById(id)
     ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-}
-
-function points(t: TeamStats) {
-  return t.wins * 3 + t.draws;
 }
 
 function TeamBlock({

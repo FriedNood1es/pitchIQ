@@ -13,7 +13,9 @@ export interface DataEdge {
 const formPoints: Record<string, number> = { W: 3, D: 1, L: 0 };
 const sumForm = (form: string[]) =>
   form.reduce((n, r) => n + (formPoints[r] ?? 0), 0);
-const ppg = (t: TeamStats) => (t.wins * 3 + t.draws) / Math.max(1, t.played);
+/** League points from a record — single copy for every table/hero/row. */
+export const points = (t: TeamStats) => t.wins * 3 + t.draws;
+const ppg = (t: TeamStats) => points(t) / Math.max(1, t.played);
 
 /**
  * Deterministic data edge from numbers already in the report. Ratings are

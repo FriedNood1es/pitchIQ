@@ -1,6 +1,7 @@
 import { KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { fetchStandings } from "../api/client";
 import { formatDay as dayLabel } from "../dates";
+import { points as pts } from "../edge";
 import { CountryFlag } from "./CountryFlag";
 import { LeagueSidebar } from "./LeagueSidebar";
 import { MatchRow } from "./MatchRow";
@@ -148,7 +149,6 @@ function DateSection({
 
 /** Pinned-season table for a league band: pos, record, goals, points. */
 function StandingsTable({ rows, competition }: { rows: TeamStats[]; competition: string }) {
-  const pts = (t: TeamStats) => t.wins * 3 + t.draws;
   if (rows.length === 0) {
     return (
       <p className="px-1 py-3 text-center text-sm text-[var(--muted)]">
@@ -589,7 +589,7 @@ export function FixturesView({
               title="Previous day"
               className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
             >
-              ‹
+              <span aria-hidden="true">‹</span>
             </button>
             <span aria-live="polite" className="min-w-24 text-center text-sm font-bold text-[var(--text)]">
               {dayLabel(days[safeIdx].iso)}
@@ -602,7 +602,7 @@ export function FixturesView({
               title="Next day"
               className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
             >
-              ›
+              <span aria-hidden="true">›</span>
             </button>
           </div>
         )}

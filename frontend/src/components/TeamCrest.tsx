@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { findCrestURL, useEspnTeams } from "../crests";
+import { useCrestUrl } from "../crests";
 
 interface Props {
   name: string;
@@ -44,15 +44,8 @@ function initials(name: string): string {
 export function TeamCrest({ name, crestColor, size = 22, competition }: Props) {
   // Real badge over the monogram: the initials stay mounted underneath, so
   // loading and failures degrade to the monogram with zero layout shift.
-  const teams = useEspnTeams(competition ?? "");
-  // Promoted/relegated clubs live in a different ESPN section than the BSD
-  // competition (Leeds: BSD Championship vs ESPN Premier League) — fall back
-  // to the merged all-competition list on a miss.
-  const allTeams = useEspnTeams("");
-  const url =
-    competition && teams
-      ? (findCrestURL(teams, name) ?? (allTeams ? findCrestURL(allTeams, name) : undefined))
-      : undefined;
+  // Single shared-store lookup — no per-row fetch or list merge.
+  const url = useCrestUrl(competition, name);
   const [failed, setFailed] = useState(false);
   return (
     <span

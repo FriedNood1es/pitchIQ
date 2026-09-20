@@ -133,9 +133,10 @@ export function IconSelect({
         disabled={disabled}
         onClick={() => (open ? setOpen(false) : openList())}
         onKeyDown={onKeyDown}
-        aria-haspopup="listbox"
+        role="combobox"
         aria-expanded={open}
         aria-controls={listId}
+        aria-activedescendant={open ? `${listId}-opt-${activeIndex}` : undefined}
         aria-label={label}
         className={`tl-field flex w-full items-center gap-2 text-left disabled:opacity-50 ${
           size === "sm" ? "px-2.5 py-1.5 text-[0.82rem]" : ""
@@ -158,9 +159,6 @@ export function IconSelect({
           id={listId}
           role="listbox"
           aria-label={label}
-          aria-activedescendant={`${listId}-opt-${activeIndex}`}
-          tabIndex={-1}
-          onKeyDown={onKeyDown}
           className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface-2)] py-1 shadow-xl"
         >
           {options.map((option, i) => (

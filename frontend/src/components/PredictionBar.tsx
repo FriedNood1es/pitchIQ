@@ -30,7 +30,7 @@ export function PredictionBar({ teamA, teamB, prediction, generatedBy, insight, 
     <div id="compare-prediction" className="tl-card scroll-mt-24 p-5">
       <div className="mb-3 flex items-center gap-2">
         <span
-          className="rounded px-1.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide"
+          className="rounded px-1.5 py-0.5 text-[0.75rem] font-bold uppercase tracking-wide"
           style={{ background: "var(--brand)", color: "var(--brand-ink)" }}
           title={
             generatedBy === "ai"
@@ -42,7 +42,7 @@ export function PredictionBar({ teamA, teamB, prediction, generatedBy, insight, 
         </span>
         <h2 className="tl-card-title">Match Prediction</h2>
         <span
-          className="ml-auto rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide"
+          className="ml-auto rounded-full px-2 py-0.5 text-[0.75rem] font-bold uppercase tracking-wide"
           style={{ background: "var(--surface-3)", color: confColor }}
         >
           {confidence} confidence
@@ -72,7 +72,7 @@ export function PredictionBar({ teamA, teamB, prediction, generatedBy, insight, 
           {awayWin >= 12 ? `${awayWin}%` : ""}
         </div>
       </div>
-      <div className="mt-2 flex text-[0.7rem] font-bold">
+      <div className="mt-2 flex text-[0.75rem] font-bold">
         <span className="truncate" style={{ color: "var(--text)" }}>
           {teamA}
         </span>

@@ -2,6 +2,22 @@
 
 _Last updated: 2026-09-20_
 
+## 8av. Impeccable re-audit fixes (16/20 → P1/P2/P3) ✅ DONE (2026-09-20)
+Optimize: crest loading lifted to a shared store (`useSyncExternalStore` +
+one `warmCrests()` at boot — TeamCrest is a pure lookup, no more 2×
+subscriptions and 11-list merges per row); chart.js code-split via
+`React.lazy` (own 169KB chunk, main bundle 433→267KB, skeleton fallback).
+Harden: IconSelect combobox semantics moved to the focused trigger
+(`aria-activedescendant` off the `ul`); `summary:focus-visible` joins the ring
+rule; functional text floored at 12px (lineup labels/chips/scores, LIVE
+badge, prediction badges/legend — captain "C" keeps 10px, it has
+aria-label+title). Adapt/distill: compare bar stacks full-width under `sm:`
+(`vs` hidden on mobile); one `points()` in `edge.ts` replaces three copies.
+Polish: `.tl-divide` CSS rule replaces the `divide-[var()]` hack; stepper
+glyphs `aria-hidden`; inline SVG pitch favicon. Deliberately kept: per-row
+live clocks (negligible at current scale, marked `ponytail:`). Both builds
+green.
+
 ## 8au. Impeccable audit fixes (17/20 → P1/P2/P3) ✅ DONE (2026-09-20)
 TeamSearchBox is keyboard-navigable (arrows/Home/End/Enter, input-owned
 `aria-activedescendant`, plain `li role="option"` — the button-nested pattern
