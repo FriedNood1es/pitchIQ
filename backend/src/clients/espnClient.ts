@@ -1,11 +1,19 @@
 /**
  * Club badges from ESPN's keyless scoreboard API (BSD exposes no artwork).
- * Slugs are doc-confirmed (Public-ESPN-API soccer table), including
- * `uefa.europa.conf` for the Conference League. Plain fetch: browsers can't
- * call ESPN (no CORS headers) and some networks refuse its DNS, so this runs
- * server-side behind GET /api/crests with a 24h cache — monograms cover
- * every failure, and only successful fills are cached.
+ *
+ * Primary source: data/espn-crests.json (generated snapshot, committed).
+ * The live API is an optional refresh — on unblocked networks it populates
+ * the in-memory cache; on blocked networks the JSON provides badges instantly.
+ *
+ * Generation: node scripts/fetch-espn-crests.mjs (from any machine with
+ * ESPN access). Run once at season start or when squads change.
+ *
+ * CDN pattern: https://a.espncdn.com/i/teamlogos/soccer/500/{id}.png
+ * The CDN is always reachable even when the ESPN API is firewalled.
  */
+
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
 export interface EspnCrest {
   id: string;
@@ -32,6 +40,33 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 10_000;
 const cache = new Map<string, { at: number; teams: EspnCrest[] }>();
 
+// --- Static JSON fallback (primary source on blocked networks) ---
+
+interface StaticCrestData {
+  generatedAt: string;
+  teams: Record<string, EspnCrest[]>;
+}
+
+let staticCrests: StaticCrestData | null = null;
+
+function loadStaticCrests(): StaticCrestData {
+  if (staticCrests) return staticCrests;
+  try {
+    // dist/clients/espnClient.js -> ../../data/espn-crests.json
+    const path = resolve(__dirname, "../../data/espn-crests.json");
+    staticCrests = JSON.parse(readFileSync(path, "utf-8"));
+    console.log(
+      `[espnClient] loaded static crests (${staticCrests!.generatedAt})`
+    );
+  } catch {
+    console.warn("[espnClient] no static crest file found — crests will depend on live API");
+    staticCrests = { generatedAt: "", teams: {} };
+  }
+  return staticCrests!;
+}
+
+// --- ESPN API (live refresh) ---
+
 /** Prefer the default artwork variant, else the first logo, else CDN patterns. */
 function pickUrl(t: {
   id?: unknown;
@@ -49,8 +84,6 @@ function pickUrl(t: {
     logos.find((l) => hasRel(l, "full") && isHref(l)) ??
     logos.find(isHref);
   if (pick) return pick.href;
-  // Verified CDN pattern keys off the lowercase abbreviation (e.g. dal);
-  // the numeric-id pattern also serves. Either beats a monogram.
   if (typeof t.abbreviation === "string" && t.abbreviation) {
     return `https://a.espncdn.com/i/teamlogos/soccer/500/${t.abbreviation.toLowerCase()}.png`;
   }
@@ -84,25 +117,46 @@ function parseTeams(json: unknown): EspnCrest[] {
   return out;
 }
 
-export async function espnCrests(competitionId: string): Promise<EspnCrest[]> {
+async function fetchLiveCrests(slug: string): Promise<EspnCrest[]> {
+  const res = await fetch(
+    `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/teams`,
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+  );
+  if (!res.ok) throw new Error(`ESPN ${res.status}`);
+  return parseTeams(await res.json());
+}
+
+// --- Public API ---
+
+export function espnCrests(competitionId: string): EspnCrest[] {
   const slug = ESPN_SLUG[competitionId];
   if (!slug) return [];
+
+  // 1. In-memory cache (24h)
   const hit = cache.get(slug);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.teams;
-  try {
-    const res = await fetch(
-      `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/teams`,
-      { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
-    );
-    if (!res.ok) throw new Error(`ESPN ${res.status}`);
-    const teams = parseTeams(await res.json());
-    // Never cache empties — an outage shouldn't poison a day.
-    if (teams.length > 0) cache.set(slug, { at: Date.now(), teams });
-    return teams;
-  } catch (err) {
-    console.warn(
-      `[espnClient] crests unavailable for ${slug}: ${(err as Error).message}`
-    );
-    return [];
+
+  // 2. Live API (non-blocking — fire and forget to refresh cache)
+  fetchLiveCrests(slug)
+    .then((teams) => {
+      if (teams.length > 0) cache.set(slug, { at: Date.now(), teams });
+    })
+    .catch(() => {
+      /* blocked network — silent, static fallback covers us */
+    });
+
+  // 3. Static JSON (synchronous, immediate)
+  const staticData = loadStaticCrests();
+  const fromJson = (staticData.teams[competitionId] ?? []).map((t) => ({
+    ...t,
+    // Ensure URL uses CDN pattern even if JSON entry is missing it
+    url: t.url || `https://a.espncdn.com/i/teamlogos/soccer/500/${t.id}.png`,
+  }));
+
+  // Cache the static result too so subsequent calls within TTL skip the load
+  if (fromJson.length > 0 && !hit) {
+    cache.set(slug, { at: Date.now(), teams: fromJson });
   }
+
+  return fromJson;
 }

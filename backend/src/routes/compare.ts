@@ -29,7 +29,7 @@ router.get("/teams", async (req, res) => {
   }
 });
 
-/** Club badges for a competition (empty when ESPN is unreachable). */
+/** Club badges for a competition (static snapshot; monograms cover gaps). */
 router.get("/crests", async (req, res) => {
   const competition = (req.query.competition as string) ?? COMPETITIONS[0].id;
   if (!getCompetition(competition)) {

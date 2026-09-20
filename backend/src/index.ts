@@ -1,5 +1,10 @@
+import dns from "dns";
 import cors from "cors";
 import express from "express";
+
+// Router DNS (dev.opt) blocks site.api.espn.com; Google DNS resolves it.
+// ESPN image CDN (a.espncdn.com) is not blocked — badges load once URLs resolve.
+dns.setServers(["8.8.8.8"]);
 import { warmSearchIndex } from "./agents/previewAgent";
 import compareRouter from "./routes/compare";
 import fixturesRouter from "./routes/fixtures";

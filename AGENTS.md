@@ -67,10 +67,16 @@ lineups — to guide a match prediction.
   club absent from that cup's completed season 404 on stats (degrade to an
   error card) — search ranks domestic entries first, so the top hit resolves.
 - **Crests via ESPN proxy** (§8ad). BSD exposes no badge artwork, so badges
-  resolve server-side through `clients/espnClient.ts` (`GET /api/crests?competition=`),
-  a keyless ESPN scoreboard API with 24h in-memory cache (only successful
-  responses cached). Browsers can't call ESPN directly (no CORS), so every
-  badge request routes through the backend. Frontend `crests.ts` does
+  resolve server-side through `clients/espnClient.ts` (`GET /api/crests?competition=`).
+  Primary source: `data/espn-crests.json` (generated snapshot, committed —
+  all 11 competitions, 264 teams, every URL HEAD-validated).
+  The live ESPN API is an optional refresh — on blocked networks the JSON
+  provides badges instantly; on unblocked networks it populates the 24h
+  in-memory cache. Generation: `node scripts/fetch-espn-crests.mjs` from any
+  machine with normal DNS, or `scripts/fetch-espn-crests.ps1` from behind
+  dev.opt's block (resolves ESPN's IP over DNS-over-HTTPS and pins it with
+  curl `--resolve`). Browsers can't call ESPN directly (no CORS), so
+  every badge request routes through the backend. Frontend `crests.ts` does
   BSD→ESPN name matching (exact → normalized → unique one-directional token
   containment; ambiguous = monogram, never a wrong badge) with a 7-day
   `localStorage` cache + in-flight dedupe. `TeamCrest.tsx` layers the badge

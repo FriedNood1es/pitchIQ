@@ -27,6 +27,19 @@ budget bump (350 → 1500 — reasoning models spend tokens thinking before the
 `content` field fills). Verified live: `insightGeneratedBy=ai` with
 model-written prose; failures still fall back to the template.
 
+## 8ae. Full crest coverage (all 11 competitions, 264 badges) ✅ DONE (2026-09-20)
+Static snapshot graduated from the 10-team PL seed to every team ESPN lists:
+20/20/20/18/18 across Big-5, 36/36/36 across the three Euro cups, 18/18
+Eredivisie/Liga Portugal, 24 Championship — 264/264 logo URLs HEAD-validated
+against the CDN. Unblocked by resolving ESPN's IP over DNS-over-HTTPS
+(`https://1.1.1.1/dns-query`, an IP literal so no local DNS is needed) and
+pinning it with curl `--resolve` (correct SNI + cert, unlike IP fetching).
+New `backend/scripts/fetch-espn-crests.ps1` does this end-to-end on DNS-blocked
+networks; the `.mjs` stays the clean-plain-fetch version for normal machines.
+`GET /api/crests` verified per competition on a fresh built server (a stale
+dev server initially served the old seed — killed, re-probed, all counts
+match). Frontend untouched: `crests.ts` matching already handles all leagues.
+
 ## 8ad. ESPN crests via backend proxy, parser verified ✅ DONE (2026-09-17)
 Six-probe saga: browser CORS, local DNS refusal, Akamai edge 403s, empty
 CloudFront 202s, TSDB's 10/20 + zero cups — all ruled out or rejected, which
