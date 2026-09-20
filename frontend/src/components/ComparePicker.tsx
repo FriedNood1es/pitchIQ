@@ -107,7 +107,7 @@ export function ComparePicker({
         <IconSelect
           label="Home team"
           className="w-full sm:flex-1"
-          options={buildTeamOptions(teams)}
+          options={buildTeamOptions(teams, competition)}
           value={teamA}
           disabled={disabled}
           onChange={onChangeTeamA}
@@ -116,7 +116,7 @@ export function ComparePicker({
         <IconSelect
           label="Away team"
           className="w-full sm:flex-1"
-          options={buildTeamOptions(teams)}
+          options={buildTeamOptions(teams, competition)}
           value={teamB}
           disabled={disabled}
           onChange={onChangeTeamB}

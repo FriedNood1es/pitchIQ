@@ -64,7 +64,7 @@ export function PreviewControls({
             label="Team"
             size="sm"
             className="min-w-40 flex-1"
-            options={buildTeamOptions(teams)}
+            options={buildTeamOptions(teams, competition)}
             value={team}
             disabled={disabled}
             onChange={onChangeTeam}
@@ -95,7 +95,7 @@ export function PreviewControls({
         <IconSelect
           label="Team"
           className="w-full sm:flex-1"
-          options={buildTeamOptions(teams)}
+          options={buildTeamOptions(teams, competition)}
           value={team}
           disabled={disabled}
           onChange={onChangeTeam}
