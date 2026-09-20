@@ -15,6 +15,7 @@ lineups — to guide a match prediction.
 - For live-data end-to-end checks: `backend/scripts/verify.ps1` starts the built
   backend hidden, probes preview-teams/preview/compare with timings, then kills the
   server (no orphaned processes). Requires `npm run build -w backend` first.
+  Also probes search (cold+warm), team-stats, and fixtures; supports `-SkipCompare`.
 - Backend needs `backend/.env` with `BSD_KEY`;
   `.env` is gitignored, `.env.example` documents every variable.
 
@@ -65,22 +66,26 @@ lineups — to guide a match prediction.
   fixture names and standings names differ in places. European-cup hits for a
   club absent from that cup's completed season 404 on stats (degrade to an
   error card) — search ranks domestic entries first, so the top hit resolves.
-- **No crest images anywhere.** BSD exposes no badge artwork, so every team
-  renders as a colour monogram (`TeamCrest.tsx`, driven by `crestColor` from
-  `crestColorFor` in `teamDirectory.ts`). There is no external crest lookup, no
-  rate limiter, no background fill, and no frontend crest polling — the earlier
-  API-Football crest pipeline was removed wholesale. Fixtures load straight
-  from BSD's 10-min cache; league switches are instant.
+- **Crests via ESPN proxy** (§8ad). BSD exposes no badge artwork, so badges
+  resolve server-side through `clients/espnClient.ts` (`GET /api/crests?competition=`),
+  a keyless ESPN scoreboard API with 24h in-memory cache (only successful
+  responses cached). Browsers can't call ESPN directly (no CORS), so every
+  badge request routes through the backend. Frontend `crests.ts` does
+  BSD→ESPN name matching (exact → normalized → unique one-directional token
+  containment; ambiguous = monogram, never a wrong badge) with a 7-day
+  `localStorage` cache + in-flight dedupe. `TeamCrest.tsx` layers the badge
+  image over the mounted monogram (zero layout shift on load/failure).
+  Coverage: ~85-100% for Big-5 leagues, lower for cross-border cups —
+  monograms are the deliberate fallback.
 - BSD client quirks (`clients/bsdClient.ts`): every request has an 8s
   `AbortSignal.timeout` (stalled third-party calls fail fast) and a 10min
   in-process cache.
 
 ## Provider data gaps (do not "fix" by fabricating)
 
-- **No crest images** — BSD exposes no badge artwork, so teams render as colour
-  monograms (`TeamCrest.tsx`). The `CREST_COLORS` map in `teamDirectory.ts`
-  only covers PL clubs; other clubs fall back to slate. This is by design, not
-  a bug to paper over.
+- **Crest coverage is incomplete for cross-border cups.** ESPN resolution is
+  ~85-100% for Big-5 domestic leagues, lower for UCL/Europa/Conference where
+  cross-border clubs may not match. Monograms are the deliberate fallback.
 - **H2H and injuries are real but best-effort.** BSD H2H comes from the mutual
   event between the two clubs (`v2/events/{id}/h2h/`, last 5, cross-season);
   injuries come from `unavailable_players` in the most recent finished event's
@@ -100,7 +105,9 @@ lineups — to guide a match prediction.
   (`LLM_PROVIDER`: groq | gemini | openrouter) on a data brief
   (`buildDataBrief`); without a key it falls back to the deterministic
   `buildTemplatedInsight`. `insightGeneratedBy` distinguishes "ai" from
-  "template". No key is committed.
+  "template". No key is committed. The default `llama-3.3-70b-versatile` was
+  retired; set `LLM_MODEL=openai/gpt-oss-20b` (or another live model) in
+  `.env` for Groq.
 
 ## Conventions & gotchas
 
@@ -113,10 +120,9 @@ lineups — to guide a match prediction.
   changes). Currently 11 competitions (Big-5 + UCL + Europa + Conference + Eredivisie
   + Liga Portugal + Championship). Refreshing a season: `GET /seasons/?league=<bsdLeague>`,
   match on the season *name* (BSD's numeric `year` is unreliable).
-- Crests: there are none (see the data-gap above). `CREST_COLORS` in
-  `teamDirectory.ts` only covers PL clubs — every other club renders the slate
-  monogram fallback. Extending that map is the only way to improve monogram
-  colour fidelity; it is decorative, never an error.
+- Crests: `CREST_COLORS` in `teamDirectory.ts` covers ~70+ clubs across Big-5
+  + Eredivisie + Liga Portugal. Light-clad or unmapped clubs fall back to slate —
+  decorative, never an error.
 - Frontend proxies `/api` → `http://localhost:4000` via `vite.config.ts`.
 - Style: 2-space indent, semicolons, double quotes. The codebase favours dense
   explanatory doc comments on non-obvious decisions — match that rather than adding
