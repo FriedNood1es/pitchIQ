@@ -53,6 +53,7 @@ export function IconSelect({
   }, [open]);
 
   // Keep the highlighted row in view as the user arrows through the list.
+  // Instant (no behavior key): already still under reduced motion by default.
   useEffect(() => {
     if (!open) return;
     listRef.current

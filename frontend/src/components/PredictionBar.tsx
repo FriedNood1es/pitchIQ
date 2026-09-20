@@ -57,19 +57,19 @@ export function PredictionBar({ teamA, teamB, prediction, generatedBy, insight, 
           className="flex items-center justify-center px-2 text-[var(--on-color)]"
           style={{ width: `${homeWin}%`, background: "var(--team-a)" }}
         >
-          {homeWin}%
+          {homeWin >= 12 ? `${homeWin}%` : ""}
         </div>
         <div
           className="flex items-center justify-center px-2 text-[var(--text-2)]"
           style={{ width: `${draw}%`, background: "var(--surface-3)" }}
         >
-          {draw}%
+          {draw >= 12 ? `${draw}%` : ""}
         </div>
         <div
           className="flex items-center justify-center px-2 text-[var(--on-color)]"
           style={{ width: `${awayWin}%`, background: "var(--team-b)" }}
         >
-          {awayWin}%
+          {awayWin >= 12 ? `${awayWin}%` : ""}
         </div>
       </div>
       <div className="mt-2 flex text-[0.7rem] font-bold">

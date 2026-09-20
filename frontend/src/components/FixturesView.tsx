@@ -129,9 +129,9 @@ function DateSection({
 }) {
   return (
     <div id={anchor} className="scroll-mt-24">
-      <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+      <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
         {label}
-      </h3>
+      </h2>
       <div className="mt-1.5 space-y-1" onKeyDown={(e) => arrowNav(e, "vertical")}>
         {fixtures.map((f) => (
           <MatchRow

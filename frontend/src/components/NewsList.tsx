@@ -123,12 +123,12 @@ export function NewsList({ teamAName, teamBName, teamANews, teamBNews }: Props) 
       onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
     >
       <summary className="cursor-pointer">
-        <span className="tl-card-title">
+        <h2 className="tl-card-title">
           Latest News{" "}
           <span className="font-extrabold tabular-nums">
             ({teamANews.length} · {teamBNews.length})
           </span>
-        </span>
+        </h2>
         {!expanded && preview.length > 0 && (
           <span className="mt-2 block space-y-2 normal-case tracking-normal">
             {preview.map((r) => (

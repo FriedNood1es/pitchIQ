@@ -174,9 +174,10 @@ body {
   }
 }
 
-/* Sliding active-pill backdrop (status filter) — position set from JS measurement. */
+/* Sliding active-pill backdrop (status filter) — position set from JS measurement.
+   Transform-only: width snaps instantly (no per-frame layout), x slides. */
 .tl-slide-indicator {
-  transition: transform 0.25s ease, width 0.25s ease;
+  transition: transform 0.25s ease;
 }
 
 /* Accessible focus ring for every interactive control */

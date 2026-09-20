@@ -2,6 +2,18 @@
 
 _Last updated: 2026-09-20_
 
+## 8au. Impeccable audit fixes (17/20 → P1/P2/P3) ✅ DONE (2026-09-20)
+TeamSearchBox is keyboard-navigable (arrows/Home/End/Enter, input-owned
+`aria-activedescendant`, plain `li role="option"` — the button-nested pattern
+is gone) mirroring IconSelect; date-bucket headings are `h2` (no more
+`h1`→`h3` skip) and Latest News summary title is `h2` so column `h3`s nest;
+slide indicator transitions transform only (width snaps, no per-frame
+layout); prediction-bar `%` labels hide below 12% width (parent `role="img"`
+label + legend carry the values); stat-bar tracks are `aria-hidden` (values
+already text). Deliberately not changed: IconSelect scroll stays instant
+(smooth would add motion; instant is reduced-motion-safe by default), per-row
+live timers and radar `getComputedStyle` left as negligible. Both builds green.
+
 ## 8at. Over-engineering cut (ponytail-audit) ✅ DONE (2026-09-20)
 Deleted ~700 lines + 2 deps, one commit (easy rollback): mock mode gone
 (`mocks/*`, `USE_MOCK_DATA` branches — news degrades to `[]`, never invented

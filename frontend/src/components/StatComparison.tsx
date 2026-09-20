@@ -48,8 +48,9 @@ function Row({ row }: { row: StatRow }) {
         </span>
         <span className={valueClass(bLeads)}>{row.displayB ?? Math.round(row.b)}</span>
       </div>
-      {/* magnitude fills growing from the centre, 2px surface gap between them */}
-      <div className="flex h-2 gap-[2px]">
+      {/* magnitude fills growing from the centre, 2px surface gap between them.
+          Decorative: values already read as text above, so hide from AT. */}
+      <div className="flex h-2 gap-[2px]" aria-hidden="true">
         <div className="flex-1 overflow-hidden rounded-l-full" style={{ background: "var(--surface-3)" }}>
           <div
             className="ml-auto h-full rounded-l-full"
