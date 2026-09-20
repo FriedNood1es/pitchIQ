@@ -27,6 +27,18 @@ budget bump (350 → 1500 — reasoning models spend tokens thinking before the
 `content` field fills). Verified live: `insightGeneratedBy=ai` with
 model-written prose; failures still fall back to the template.
 
+## 8ah. Structured match prediction ✅ DONE (2026-09-20)
+One LLM call now returns prose + probabilities: prompt demands JSON
+`{summary, homeWin, draw, awayWin, confidence, keyFactor}`, brace-extracted
+and validated (sums to 100, else template fallback). Brief enriched with
+goals/game, conceded/game, form points. Without a key,
+`buildDeterministicPrediction` derives the same shape from the `edge.ts`
+weights via sigmoid. `PredictionBar` renders the stacked bar between hero and
+insight with an "AI Prediction" / "Statistical Model" badge. Verified live:
+Groq returned 70/15/15 high-confidence Arsenal–Chelsea with xG-grounded prose.
+Tab chrome cleaned: empty favicon (`data:,`), ⚽ dropped from title, stray
+ball SVG deleted.
+
 ## 8ag. Compare survives reload ✅ DONE (2026-09-20)
 Reloading `#/compare/<comp>/<a>/<b>` reset to the first two standings teams.
 Race between two effects: Effect 1 set competition + cleared `hashDraft` in

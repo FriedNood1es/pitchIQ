@@ -111,8 +111,19 @@ export interface ValidatedData extends RetrievalResult {
 
 export interface InsightResult {
   summary: string;
+  prediction: Prediction;
   /** Whether the summary was written by a real LLM or the deterministic template. */
   generatedBy: "ai" | "template";
+}
+
+/** Structured win/draw/loss probabilities. Percentages sum to 100. */
+export interface Prediction {
+  homeWin: number;
+  draw: number;
+  awayWin: number;
+  confidence: "low" | "medium" | "high";
+  /** One sentence: the single biggest differentiator. */
+  keyFactor: string;
 }
 
 export interface NewsResult {
@@ -147,6 +158,8 @@ export interface CompareReport {
   insight: string;
   /** Whether insight came from a real LLM ("ai") or the template ("template"). */
   insightGeneratedBy: "ai" | "template";
+  /** Structured probabilities — "ai" when the LLM produced them, else the deterministic model. */
+  prediction: Prediction;
   news: NewsResult;
   visualization: VisualizationResult;
   generatedAt: string;

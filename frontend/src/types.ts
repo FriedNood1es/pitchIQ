@@ -78,6 +78,14 @@ export interface RadarDataset {
   data: number[];
 }
 
+export interface Prediction {
+  homeWin: number;
+  draw: number;
+  awayWin: number;
+  confidence: "low" | "medium" | "high";
+  keyFactor: string;
+}
+
 export interface CompareReport {
   intent: { type: "team_comparison"; competition: string; teamA: TeamId; teamB: TeamId };
   teams: {
@@ -88,6 +96,7 @@ export interface CompareReport {
   validationIssues: { field: string; message: string }[];
   insight: string;
   insightGeneratedBy: "ai" | "template";
+  prediction: Prediction;
   news: { teamA: NewsItem[]; teamB: NewsItem[] };
   visualization: {
     radar: { labels: string[]; datasets: RadarDataset[] };

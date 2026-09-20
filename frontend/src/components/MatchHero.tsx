@@ -13,6 +13,7 @@ interface Props {
 }
 
 const ANCHORS = [
+  ["compare-prediction", "Prediction"],
   ["compare-stats", "Stats"],
   ["compare-lineups", "Lineups"],
   ["compare-h2h", "Head-to-head"],

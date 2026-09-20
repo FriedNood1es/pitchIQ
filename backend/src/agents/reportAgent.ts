@@ -32,6 +32,7 @@ export function runReportAgent(
     validationIssues: validatedData.issues,
     insight: insight.summary,
     insightGeneratedBy: insight.generatedBy,
+    prediction: insight.prediction,
     news,
     visualization,
     generatedAt: new Date().toISOString(),

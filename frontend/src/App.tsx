@@ -8,6 +8,7 @@ import { InsightPanel } from "./components/InsightPanel";
 import { LineupPanel } from "./components/LineupPanel";
 import { HeroAnchors, MatchHero } from "./components/MatchHero";
 import { NewsList } from "./components/NewsList";
+import { PredictionBar } from "./components/PredictionBar";
 import { RadarChart } from "./components/RadarChart";
 import { ReportSkeleton } from "./components/Skeletons";
 import { StatComparison, StatRow } from "./components/StatComparison";
@@ -608,6 +609,14 @@ export default function App() {
               />
             </div>
             <HeroAnchors />
+            <div className="tl-reveal tl-reveal-delay-1">
+              <PredictionBar
+                teamA={report.teams.teamA.stats.name}
+                teamB={report.teams.teamB.stats.name}
+                prediction={report.prediction}
+                generatedBy={report.insightGeneratedBy}
+              />
+            </div>
             <div className="tl-reveal tl-reveal-delay-1">
               <InsightPanel
                 insight={report.insight}
