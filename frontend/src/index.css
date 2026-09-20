@@ -195,6 +195,18 @@ summary:focus-visible {
   outline-offset: 2px;
 }
 
+/* Skip link: parked off-screen until focused, then pinned top-left. */
+.tl-skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 50;
+  transition: top 0.15s ease;
+}
+.tl-skip-link:focus-visible {
+  top: 0.5rem;
+}
+
 /* WCAG 2.5.8: every pointer target is at least 44px tall. Button content
    centers vertically by default, so short controls just gain padding. */
 button,
@@ -271,7 +283,8 @@ input[type="search"],
   .animate-spin {
     animation: none;
   }
-  .tl-slide-indicator {
+  .tl-slide-indicator,
+  .tl-skip-link {
     transition: none;
   }
 }

@@ -21,13 +21,17 @@ export function useCountdown(target: string | number | Date): number {
   return Math.max(0, remaining);
 }
 
-/** Current epoch ms, ticking on an interval. Used for live-match elapsed clocks. */
-export function useNow(intervalMs = 1000): number {
+/** Current epoch ms, ticking on an interval. Pass active=false to read once
+ * without subscribing — lets a list share one clock only while live rows
+ * exist instead of every row owning a 1s interval. */
+export function useNow(intervalMs = 1000, active = true): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
+    if (!active) return;
+    setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), intervalMs);
     return () => window.clearInterval(id);
-  }, [intervalMs]);
+  }, [intervalMs, active]);
   return now;
 }
 

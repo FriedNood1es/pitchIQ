@@ -1,5 +1,5 @@
 import { Fixture } from "../types";
-import { formatCountdown, useCountdown, useNow } from "../hooks/useCountdown";
+import { formatCountdown, useCountdown } from "../hooks/useCountdown";
 import { TeamCrest } from "./TeamCrest";
 
 export function kickoff(iso: string): string {
@@ -22,10 +22,9 @@ function CountdownCell({ date }: { date: string }) {
   );
 }
 
-/** LIVE badge + elapsed minute for the time column (scores sit on each team line). */
-function LiveCell({ date }: { date: string }) {
-  // ponytail: one 1s interval per live row; lift to a shared useNow per list if live fixtures ever scale.
-  const now = useNow(1000);
+/** LIVE badge + elapsed minute for the time column (scores sit on each team line).
+ * `now` comes from the list's shared clock — pure math here, no interval. */
+function LiveCell({ date, now }: { date: string; now: number }) {
   const elapsedMin = Math.max(
     0,
     Math.floor((now - new Date(date).getTime()) / 60_000)
@@ -84,11 +83,14 @@ export function MatchRow({
   fixture,
   onClick,
   pending,
+  now,
 }: {
   fixture: Fixture;
   onClick: () => void;
   /** True while the click is resolving standings slugs — blocks double-taps. */
   pending?: boolean;
+  /** Shared list clock (epoch ms) for the live elapsed cell. */
+  now: number;
 }) {
   // Finished rows are NOT dimmed: opacity reads as disabled. The FT label
   // + per-line scores in the time column already separate them.
@@ -115,7 +117,7 @@ export function MatchRow({
             <span className="text-xs tabular-nums text-[var(--muted)]">{kickoff(fixture.date)}</span>
           </>
         )}
-        {fixture.status === "live" && <LiveCell date={fixture.date} />}
+        {fixture.status === "live" && <LiveCell date={fixture.date} now={now} />}
         {fixture.status === "scheduled" && <CountdownCell date={fixture.date} />}
       </span>
       <span className="flex min-w-0 flex-col justify-center gap-1 py-0.5">

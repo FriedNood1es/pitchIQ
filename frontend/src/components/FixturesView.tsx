@@ -2,6 +2,7 @@ import { KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } 
 import { fetchStandings } from "../api/client";
 import { formatDay as dayLabel } from "../dates";
 import { points as pts } from "../edge";
+import { useNow } from "../hooks/useCountdown";
 import { CountryFlag } from "./CountryFlag";
 import { LeagueSidebar } from "./LeagueSidebar";
 import { MatchRow } from "./MatchRow";
@@ -128,6 +129,9 @@ function DateSection({
   /** Scroll target id for the date stepper (undefined = not steppable). */
   anchor?: string;
 }) {
+  // One shared live clock per date bucket — active only while a live row
+  // exists, so finished/scheduled lists never re-render on a timer.
+  const now = useNow(1000, fixtures.some((f) => f.status === "live"));
   return (
     <div id={anchor} className="scroll-mt-24">
       <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
@@ -138,6 +142,7 @@ function DateSection({
           <MatchRow
             key={f.eventId}
             fixture={f}
+            now={now}
             pending={pendingEventId === f.eventId}
             onClick={() => onNavigate(f)}
           />
@@ -523,10 +528,10 @@ export function FixturesView({
           aria-label="Introduction (collapsed)"
           className="tl-card flex items-center gap-3 px-4 py-2.5"
         >
-          <span className="truncate text-sm text-[var(--muted)]">
+          <h1 className="truncate text-sm text-[var(--muted)]">
             <strong className="font-bold text-[var(--text)]">PitchIQ</strong>
             {" — pick a match for a data-backed prediction."}
-          </span>
+          </h1>
           <button
             type="button"
             onClick={() => setHero(true)}
@@ -549,7 +554,7 @@ export function FixturesView({
         <div className="min-w-0 flex-1 space-y-5">
       <div className="tl-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-        <div ref={trackRef} className="relative inline-flex gap-1 rounded-xl border p-1" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }} role="group" aria-label="Match status" onKeyDown={(e) => arrowNav(e, "horizontal")}>
+        <div ref={trackRef} className="relative inline-flex gap-1 rounded-xl border p-1" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }} role="radiogroup" aria-label="Match status" onKeyDown={(e) => arrowNav(e, "horizontal")}>
           <span
             aria-hidden="true"
             className="tl-slide-indicator absolute bottom-1 left-0 top-1 rounded-lg"
@@ -566,8 +571,9 @@ export function FixturesView({
                 btnRefs.current[i] = el;
               }}
               type="button"
+              role="radio"
+              aria-checked={status === s.id}
               onClick={() => onStatusChange(s.id)}
-              aria-pressed={status === s.id}
               className="relative z-10 rounded-lg px-4 py-1.5 text-sm font-bold transition"
               style={
                 status === s.id

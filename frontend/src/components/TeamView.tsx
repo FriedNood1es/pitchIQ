@@ -9,6 +9,7 @@ import { useFavoriteTeams } from "../hooks/useFavoriteTeams";
 import { useFixtures } from "../hooks/useFixtures";
 import { usePreview } from "../hooks/usePreview";
 import { useTeamStats } from "../hooks/useTeamStats";
+import { useNow } from "../hooks/useCountdown";
 import { Fixture, TeamId } from "../types";
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
 }
 
 function MatchList({ fixtures, onNavigate }: { fixtures: Fixture[]; onNavigate: (f: Fixture) => void }) {
+  const now = useNow(1000, fixtures.some((f) => f.status === "live"));
   return (
     <div className="space-y-1">
       {fixtures.map((f) => (
@@ -29,7 +31,7 @@ function MatchList({ fixtures, onNavigate }: { fixtures: Fixture[]; onNavigate: 
           <div className="px-1 pb-1 pt-2 text-xs font-medium text-[var(--muted)]">
             {dayLabel(f.date)}
           </div>
-          <MatchRow fixture={f} onClick={() => onNavigate(f)} />
+          <MatchRow fixture={f} now={now} onClick={() => onNavigate(f)} />
         </div>
       ))}
     </div>

@@ -486,6 +486,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
+      <a
+        href="#main"
+        className="tl-skip-link rounded-lg px-4 py-2 text-sm font-bold"
+        style={{ background: "var(--brand)", color: "var(--brand-ink)" }}
+      >
+        Skip to content
+      </a>
       <div className="sticky top-0 z-30">
         <header
           className="px-4 py-4"
@@ -525,6 +532,7 @@ export default function App() {
       )}
 
       <main
+        id="main"
         className="mx-auto max-w-4xl space-y-5 px-4 py-6"
         aria-busy={mode === "compare" && isFetching}
       >

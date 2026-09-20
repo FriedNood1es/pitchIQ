@@ -2,6 +2,17 @@
 
 _Last updated: 2026-09-20_
 
+## 8aw. Impeccable re-audit fixes II (17/20 → P1/P2) ✅ DONE (2026-09-20)
+Harden: skip-to-content link (off-screen until focused, reduced-motion-safe)
+targeting `<main id="main">`; collapsed intro keeps an `h1` so date `h2`s
+never orphan; status filter is a real radiogroup (`role="radio"` +
+`aria-checked`, arrow nav kept); prediction segments expose `title` so
+sub-12% values survive hover. Optimize: one shared `useNow(1000, hasLive)`
+per match list passed down to a now-pure `LiveCell` — lists without live rows
+run zero intervals (the `ponytail:` comment is resolved, not just moved).
+Dropdown `li`s deliberately left untabbable — making them tab stops would
+break the combobox pattern the report itself endorses. Both builds green.
+
 ## 8av. Impeccable re-audit fixes (16/20 → P1/P2/P3) ✅ DONE (2026-09-20)
 Optimize: crest loading lifted to a shared store (`useSyncExternalStore` +
 one `warmCrests()` at boot — TeamCrest is a pure lookup, no more 2×
