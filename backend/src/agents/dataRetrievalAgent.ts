@@ -8,6 +8,7 @@ import { getCompetition, Competition } from "../data/competitions";
 import { crestColorFor, slugify } from "../data/teamDirectory";
 import { getHeadToHead } from "../mocks/headToHead";
 import { getTeamData } from "../mocks/teams";
+import { getLiveSeasonId } from "./liveSeason";
 import {
   HeadToHeadMatch,
   Injury,
@@ -96,6 +97,11 @@ async function buildBsdTeam(
  * `unavailable_players` and the confirmed/predicted XI. A team whose fixture
  * has no data — or a call that fails — degrades to an empty report rather than
  * failing the comparison.
+ *
+ * Injuries/lineups come from the LIVE season, not the pinned completed season
+ * used for stats: a frozen season's last event lists players who have since
+ * transferred (e.g. Jesus still "injured" for Arsenal post-Barça move).
+ * Falls back to the pinned season when no live season exists yet.
  */
 async function fetchTeamNews(
   teamId: TeamId,
@@ -104,9 +110,10 @@ async function fetchTeamNews(
 ): Promise<{ injuries: Injury[]; lineup?: Lineup }> {
   try {
     console.log(`[retrieval] ${teamId}: fetching fixtures + latest lineup...`);
+    const season = await getLiveSeasonId(comp).catch(() => comp.bsdSeason);
     const fixtures = await bsd.teamFixtures(
       comp.bsdLeague,
-      comp.bsdSeason,
+      season,
       row.team_id
     );
     const lastFinished = fixtures.results

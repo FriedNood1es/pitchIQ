@@ -27,6 +27,18 @@ budget bump (350 → 1500 — reasoning models spend tokens thinking before the
 `content` field fills). Verified live: `insightGeneratedBy=ai` with
 model-written prose; failures still fall back to the template.
 
+## 8ai. Fresh injuries, crest fallback, merged prediction ✅ DONE (2026-09-20)
+Three credibility/density fixes. (1) Injuries from the LIVE season, not the
+pinned completed one — frozen events listed transferred players (Jesus still
+"injured" for Arsenal post-Barça). `fetchTeamNews` resolves
+`getLiveSeasonId`, falls back to pinned when none exists. Verified live:
+Arsenal [Copley, Saliba], Chelsea [João Pedro], Jesus gone. (2) `TeamCrest`
+falls back to the merged all-competition list on a miss — promoted clubs live
+in a different ESPN section than BSD (Leeds: BSD Championship vs ESPN PL).
+Verified: championship-only misses, fallback hits. (3) Insight prose merged
+into `PredictionBar` (one card: bar → factor → narrative → timestamp);
+`InsightPanel.tsx` deleted; prompt no longer asks prose to pick a winner.
+
 ## 8ah. Structured match prediction ✅ DONE (2026-09-20)
 One LLM call now returns prose + probabilities: prompt demands JSON
 `{summary, homeWin, draw, awayWin, confidence, keyFactor}`, brace-extracted

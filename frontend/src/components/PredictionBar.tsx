@@ -1,3 +1,4 @@
+import { formatWhen } from "./NewsList";
 import { Prediction } from "../types";
 
 interface Props {
@@ -6,14 +7,17 @@ interface Props {
   prediction: Prediction;
   /** "ai" when the LLM produced it, "template" for the deterministic model. */
   generatedBy: "ai" | "template";
+  /** Narrative insight shown beneath the bar; falls back to key factor alone. */
+  insight?: string;
+  generatedAt?: string;
 }
 
 /**
  * Structured match prediction: a stacked win/draw/loss bar with the key
- * factor beneath. Team-tinted outer segments, neutral draw middle — the same
- * visual language as the hero's team colors.
+ * factor and narrative beneath. Team-tinted outer segments, neutral draw
+ * middle — the same visual language as the hero's team colors.
  */
-export function PredictionBar({ teamA, teamB, prediction, generatedBy }: Props) {
+export function PredictionBar({ teamA, teamB, prediction, generatedBy, insight, generatedAt }: Props) {
   const { homeWin, draw, awayWin, confidence, keyFactor } = prediction;
   const label = generatedBy === "ai" ? "AI Prediction" : "Statistical Model";
   const confColor =
@@ -80,6 +84,16 @@ export function PredictionBar({ teamA, teamB, prediction, generatedBy }: Props) 
       <p className="mt-3 border-l pl-4 text-[0.85rem] leading-relaxed text-[var(--text-2)]" style={{ borderColor: "var(--brand)" }}>
         Key factor: {keyFactor}
       </p>
+      {insight && (
+        <p className="mt-2 text-[0.95rem] leading-relaxed text-[var(--text)]">
+          {insight}
+        </p>
+      )}
+      {generatedAt && (
+        <p className="mt-3 text-xs text-[var(--muted)]">
+          Generated {formatWhen(generatedAt)}
+        </p>
+      )}
     </div>
   );
 }

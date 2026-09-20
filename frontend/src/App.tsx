@@ -4,7 +4,6 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { computeEdge } from "./edge";
 import { FixturesView } from "./components/FixturesView";
 import { HeadToHeadPanel } from "./components/HeadToHeadPanel";
-import { InsightPanel } from "./components/InsightPanel";
 import { LineupPanel } from "./components/LineupPanel";
 import { HeroAnchors, MatchHero } from "./components/MatchHero";
 import { NewsList } from "./components/NewsList";
@@ -615,13 +614,8 @@ export default function App() {
                 teamB={report.teams.teamB.stats.name}
                 prediction={report.prediction}
                 generatedBy={report.insightGeneratedBy}
-              />
-            </div>
-            <div className="tl-reveal tl-reveal-delay-1">
-              <InsightPanel
                 insight={report.insight}
                 generatedAt={report.generatedAt}
-                generatedBy={report.insightGeneratedBy}
               />
             </div>
             <div id="compare-stats" className="scroll-mt-24">

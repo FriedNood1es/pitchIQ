@@ -86,7 +86,8 @@ function buildPrompt(data: ValidatedData): string {
     `${buildDataBrief(data)}\n\n` +
     `Return ONLY valid JSON with this shape (no markdown, no preamble):\n` +
     `{"summary": "3-4 sentences of football match insight comparing form, ` +
-    `highlighting injuries and head-to-head context, with a measured outlook", ` +
+    `highlighting injuries and head-to-head context. Do not state ` +
+    `probabilities or pick a winner — the prediction bar covers the verdict", ` +
     `"homeWin": <0-100>, "draw": <0-100>, "awayWin": <0-100>, ` +
     `"confidence": "low" | "medium" | "high", ` +
     `"keyFactor": "one sentence naming the single biggest differentiator"}\n` +

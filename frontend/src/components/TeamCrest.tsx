@@ -45,7 +45,14 @@ export function TeamCrest({ name, crestColor, size = 22, competition }: Props) {
   // Real badge over the monogram: the initials stay mounted underneath, so
   // loading and failures degrade to the monogram with zero layout shift.
   const teams = useEspnTeams(competition ?? "");
-  const url = competition && teams ? findCrestURL(teams, name) : undefined;
+  // Promoted/relegated clubs live in a different ESPN section than the BSD
+  // competition (Leeds: BSD Championship vs ESPN Premier League) — fall back
+  // to the merged all-competition list on a miss.
+  const allTeams = useEspnTeams("");
+  const url =
+    competition && teams
+      ? (findCrestURL(teams, name) ?? (allTeams ? findCrestURL(allTeams, name) : undefined))
+      : undefined;
   const [failed, setFailed] = useState(false);
   return (
     <span
