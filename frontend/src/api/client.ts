@@ -11,8 +11,15 @@ import {
   TeamSummary,
 } from "../types";
 
+/**
+ * API base: same-origin `/api` under the Vite dev proxy; the Render backend
+ * URL in production via the `VITE_API_URL` env (no trailing slash).
+ */
+export const apiBase =
+  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+
 async function getJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+  const res = await fetch(`${apiBase}${url}`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     // Status travels on the error so callers can tell expected 404s
@@ -80,7 +87,7 @@ export async function fetchComparison(
   teamA: TeamId,
   teamB: TeamId
 ): Promise<CompareReport> {
-  const res = await fetch("/api/compare", {
+  const res = await fetch(`${apiBase}/api/compare`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ competition, teamA, teamB }),

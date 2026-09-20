@@ -18,6 +18,13 @@ lineups — to guide a match prediction.
   Also probes search (cold+warm), team-stats, and fixtures; supports `-SkipCompare`.
 - Backend needs `backend/.env` with `BSD_KEY`;
   `.env` is gitignored, `.env.example` documents every variable.
+- Deploy (§8ar): backend → Render via `render.yaml` blueprint (long-running
+  Node keeps the BSD/insight/crest caches + boot warmup; free tier sleeps on
+  idle, Starter keeps the 24h insight cache warm). Frontend → Vercel static:
+  build `npm run build -w frontend`, output `frontend/dist`, env
+  `VITE_API_URL` → Render URL (empty = same-origin `/api` for local dev;
+  exported `apiBase` in `api/client.ts`, reused by `crests.ts`). Secrets
+  (`BSD_KEY`, rotated `LLM_API_KEY`, explicit `LLM_MODEL`) live in dashboards only.
 
 ## Architecture
 

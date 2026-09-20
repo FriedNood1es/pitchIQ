@@ -1,0 +1,24 @@
+# PitchIQ backend on Render (long-running Node keeps the BSD/insight/crest
+# caches and the boot search warmup — the reasons for Render over serverless).
+# Blueprint deploy: Render dashboard → New → Blueprint → point at the repo.
+services:
+  - type: web
+    name: pitchiq-backend
+    runtime: node
+    plan: free # sleeps on idle; Starter keeps the 24h insight cache warm
+    buildCommand: npm install && npm run build -w backend
+    startCommand: node backend/dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: BSD_KEY
+        sync: false # paste in the dashboard; never commit
+      - key: BSD_LEAGUE
+        value: 1
+      - key: BSD_SEASON
+        value: 337
+      - key: LLM_PROVIDER
+        value: groq
+      - key: LLM_API_KEY
+        sync: false # rotate first — the old one lived in chat/shell history
+      - key: LLM_MODEL
+        value: openai/gpt-oss-20b

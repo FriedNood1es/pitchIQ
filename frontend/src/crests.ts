@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiBase } from "./api/client";
 
 /**
  * Club badges via the backend crest proxy (`GET /api/crests?competition=`).
@@ -82,7 +83,7 @@ async function loadLeague(competition: string): Promise<EspnTeam[]> {
   }
   let p = inflight.get(competition);
   if (!p) {
-    p = fetch(`/api/crests?competition=${encodeURIComponent(competition)}`)
+    p = fetch(`${apiBase}/api/crests?competition=${encodeURIComponent(competition)}`)
       .then((res) => {
         if (!res.ok) throw new Error(`crests ${res.status}`);
         return res.json();

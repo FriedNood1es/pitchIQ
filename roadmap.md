@@ -2,6 +2,20 @@
 
 _Last updated: 2026-09-20_
 
+## 8ar. Deploy-ready: Render backend + Vercel frontend ✅ DONE (2026-09-20)
+Split by runtime needs: the backend is long-lived Express with load-bearing
+process state (10-min BSD, 24h insight/crest caches, boot search warmup), so
+it goes to Render, not serverless. `render.yaml` blueprint (build `npm
+install && npm run build -w backend`, start `node backend/dist/index.js`,
+`/health` check, secrets `sync: false`). Frontend takes `VITE_API_URL`
+(exported `apiBase` from `api/client.ts`, reused by `crests.ts`; empty =
+same-origin dev) — Vercel project uses build `npm run build -w frontend`,
+output `frontend/dist`. Root `build`/`build:all` scripts + `engines
+node>=20` added; `vite/client` types enabled. Verified: both builds green +
+`node backend/dist/index.js` serves `/health` from root. Rotate the Groq key
+before pasting into dashboards; free Render sleeps on idle (Starter keeps
+the insight cache warm).
+
 ## 8aq. News thumbnails in the open list ✅ DONE (2026-09-20)
 BSD story artwork (`thumbnail`, previously dropped) now flows through
 `NewsItem` to thumbnail-left rows in the expanded list (112×72, rounded,

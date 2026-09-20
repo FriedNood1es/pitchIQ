@@ -7,10 +7,15 @@
     "backend",
     "frontend"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
     "dev:backend": "npm run dev -w backend",
-    "dev:frontend": "npm run dev -w frontend"
+    "dev:frontend": "npm run dev -w frontend",
+    "build": "npm run build -w backend",
+    "build:all": "npm run build -w backend && npm run build -w frontend"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"
