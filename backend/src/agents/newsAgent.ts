@@ -1,31 +1,22 @@
 import { bsd, BsdSocialItem } from "../clients/bsdClient";
-import { config } from "../config";
 import { getCompetition } from "../data/competitions";
 import { slugify } from "../data/teamDirectory";
-import { getTeamNews } from "../mocks/news";
 import { Intent, NewsItem, NewsResult, TeamId } from "../types";
 
 /**
  * News comes from the BSD team `social` feed — a mix of press coverage and the
  * club's own tweets. BSD has no dedicated news endpoint, so this is the real
- * source. Any failure degrades to the curated mock rather than failing the
- * whole comparison, since news is supporting colour, not core analysis.
+ * source. Any failure degrades to empty lists rather than failing the whole
+ * comparison, since news is supporting colour, not core analysis.
  */
 
 const MAX_ITEMS_PER_TEAM = 6;
 
 export async function runNewsAgent(intent: Intent): Promise<NewsResult> {
-  if (!config.useMockData) {
-    const live = await retrieveBsdNews(intent);
-    if (live) return live;
-  }
-  return {
-    teamA: getTeamNews(intent.teamA),
-    teamB: getTeamNews(intent.teamB),
-  };
+  return (await retrieveBsdNews(intent)) ?? { teamA: [], teamB: [] };
 }
 
-/** Returns null when the feed can't be resolved, signalling a mock fallback. */
+/** Returns null when the feed can't be resolved, signalling empty lists. */
 async function retrieveBsdNews(intent: Intent): Promise<NewsResult | null> {
   const comp = getCompetition(intent.competition);
   if (!comp) return null;
@@ -49,7 +40,7 @@ async function retrieveBsdNews(intent: Intent): Promise<NewsResult | null> {
     };
   } catch (err) {
     console.warn(
-      "[newsAgent] BSD social feed unavailable, falling back to mock news:",
+      "[newsAgent] BSD social feed unavailable, returning empty news:",
       err instanceof Error ? err.message : err
     );
     return null;

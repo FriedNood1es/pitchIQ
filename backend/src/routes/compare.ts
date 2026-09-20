@@ -58,7 +58,7 @@ router.get("/standings", async (req, res) => {
 });
 
 router.post("/compare", async (req, res) => {
-  const { competition, teamA, teamB, message } = req.body ?? {};
+  const { competition, teamA, teamB } = req.body ?? {};
 
   if (typeof competition !== "string" || !getCompetition(competition)) {
     res.status(400).json({ error: "A valid competition is required" });
@@ -75,7 +75,7 @@ router.post("/compare", async (req, res) => {
     return;
   }
 
-  const request: CompareRequest = { competition, teamA, teamB, message };
+  const request: CompareRequest = { competition, teamA, teamB };
   try {
     const report = await runCompareOrchestrator(request, llm);
     res.json(report);

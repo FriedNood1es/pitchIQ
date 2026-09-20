@@ -1,9 +1,7 @@
 import { bsd, BsdPredictedStarter } from "../clients/bsdClient";
-import { config } from "../config";
 import { COMPETITIONS, getCompetition } from "../data/competitions";
 import { crestColorFor, slugify } from "../data/teamDirectory";
-import { getLiveSeasonId } from "./liveSeason";
-import { getTeamPreview, listMockTeams } from "../mocks/teams";
+import { positionGroup } from "../utils";
 import {
   PredictedLineupPlayer,
   PreviewEvent,
@@ -35,7 +33,7 @@ async function buildBaseTeams(competition: string): Promise<PreviewTeam[]> {
   if (!comp) throw new Error(`Unknown competition "${competition}"`);
 
   console.log(`[preview] resolving live season for ${comp.name}...`);
-  const liveSeason = await getLiveSeasonId(comp);
+  const liveSeason = await bsd.liveSeason(comp.bsdLeague);
 
   const bySlug = new Map<string, PreviewTeam>();
   const byId = new Map<number, string>();
@@ -86,9 +84,6 @@ async function buildBaseTeams(competition: string): Promise<PreviewTeam[]> {
  * artwork); the UI renders colour monograms from `crestColor`.
  */
 export async function listPreviewTeams(competition: string): Promise<PreviewTeam[]> {
-  if (config.useMockData) {
-    return listMockTeams().map((t) => ({ ...t, bsdTeamId: 0 }));
-  }
   return buildBaseTeams(competition);
 }
 
@@ -96,8 +91,6 @@ export async function runPreviewAgent(
   competition: string,
   team: TeamId
 ): Promise<PreviewReport> {
-  if (config.useMockData) return mockPreview(competition, team);
-
   return bsdPreview(competition, team);
 }
 
@@ -122,7 +115,7 @@ async function bsdPreview(
       );
     }
 
-    const liveSeason = await getLiveSeasonId(comp);
+    const liveSeason = await bsd.liveSeason(comp.bsdLeague);
 
     const fixtures = await bsd.teamFixtures(
       comp.bsdLeague,
@@ -190,15 +183,9 @@ function mapSide(side: {
 
 /** BSD positions are single letters (G/D/M/F); expand to a group label. */
 function mapStarter(p: BsdPredictedStarter): PredictedLineupPlayer {
-  const group: Record<string, string> = {
-    G: "GK",
-    D: "DEF",
-    M: "MID",
-    F: "FWD",
-  };
   return {
     name: p.name,
-    position: group[p.position] ?? p.position,
+    position: positionGroup(p.position),
     jerseyNumber: p.jersey_number ?? undefined,
     aiScore: p.ai_score,
     predictedSlot: p.predicted_slot ?? undefined,
@@ -218,18 +205,6 @@ function emptyPreview(
     home: { name: "", formation: "", starters: [] },
     away: { name: "", formation: "", starters: [] },
     message,
-    generatedAt: new Date().toISOString(),
-  };
-}
-
-function mockPreview(competition: string, team: TeamId): PreviewReport {
-  const mock = getTeamPreview(team);
-  return {
-    competition,
-    team,
-    event: mock.event,
-    home: mock.home,
-    away: mock.away,
     generatedAt: new Date().toISOString(),
   };
 }

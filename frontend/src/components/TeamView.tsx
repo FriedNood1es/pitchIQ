@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { CountryFlag } from "./CountryFlag";
 import { MatchRow } from "./MatchRow";
 import { PreviewPanel } from "./PreviewPanel";
+import { formatDay as dayLabel } from "../dates";
 import { TeamCrest } from "./TeamCrest";
 import { TeamStatsPanel } from "./TeamStatsPanel";
 import { useFavoriteTeams } from "../hooks/useFavoriteTeams";
@@ -18,23 +19,6 @@ interface Props {
   country: string;
   onBack: () => void;
   onNavigate: (fixture: Fixture) => void;
-}
-
-function dayLabel(iso: string): string {
-  const d = new Date(iso);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const day = new Date(d);
-  day.setHours(0, 0, 0, 0);
-  const diff = Math.round((day.getTime() - today.getTime()) / 86_400_000);
-  if (diff === 0) return "Today";
-  if (diff === 1) return "Tomorrow";
-  if (diff === -1) return "Yesterday";
-  return d.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
 }
 
 function MatchList({ fixtures, onNavigate }: { fixtures: Fixture[]; onNavigate: (f: Fixture) => void }) {

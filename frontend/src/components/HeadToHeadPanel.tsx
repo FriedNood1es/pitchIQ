@@ -1,20 +1,11 @@
 import { HeadToHeadMatch, TeamId } from "../types";
+import { formatDateShort as formatDate } from "../dates";
 
 interface Props {
   headToHead: HeadToHeadMatch[];
   teamA: TeamId;
   teamAName: string;
   teamBName: string;
-}
-
-function formatDate(date: string): string {
-  const parsed = new Date(date);
-  if (Number.isNaN(parsed.getTime())) return date;
-  return parsed.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 /**

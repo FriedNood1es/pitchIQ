@@ -32,13 +32,16 @@ lineups — to guide a match prediction.
   is Vite + React 18 + Tailwind + TanStack Query + Chart.js (ESM).
 - Backend is a deterministic agent pipeline — each "agent" is a plain function in
   `backend/src/agents/`. Flow: `routes/compare.ts` → `orchestrator/compareOrchestrator.ts`
-  → intent → dataRetrieval → dataValidation → insight → news → visualization → report.
+  → dataRetrieval → dataValidation → insight → news → visualization (intent +
+  report are inline in the orchestrator — single-caller wrappers were removed).
 - **BSD is the sole data provider** (there is no second provider anymore — the
   API-Football fallback and crest system were removed). BSD has no rate limit
-  and current-season + xG data. `BSD_SEASON` is pinned to a completed season
-  because the live season has no table yet.
-  `USE_MOCK_DATA=true` bypasses BSD. Mocks only cover **Arsenal and Chelsea**
-  (`mocks/teams.ts`, `mocks/news.ts`, `mocks/headToHead.ts`) — mock mode rejects other teams.
+  and current-season + xG data. Seasons are pinned per competition to a completed
+  season in `data/competitions.ts` because the live season has no table yet.
+  There is no mock mode — every agent degrades to empty data on failure, never
+  fabricated stand-ins. Shared helpers live in `backend/src/utils.ts`
+  (`errMsg`, `positionGroup`) and `bsd.liveSeason()` on the BSD client resolves
+  the live season for fixtures/preview.
 - Team identity is a name-derived **slug** (`slugify` in `data/teamDirectory.ts`,
   folds diacritics: "Atlético" → `atletico-madrid`). Slugs are resolved dynamically
   against BSD's standings table — there is no hardcoded team-id catalog.

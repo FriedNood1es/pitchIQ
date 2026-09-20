@@ -235,10 +235,7 @@ export interface BsdPredictedLineupResponse {
 
 export const bsd = {
   /** Full standings table for a given league + season. */
-  standings(
-    league: number = config.bsd.league,
-    season: number = config.bsd.season
-  ): Promise<BsdStandingsResponse> {
+  standings(league: number, season: number): Promise<BsdStandingsResponse> {
     return get<BsdStandingsResponse>(
       `/leagues/${league}/standings/?season=${season}`
     );
@@ -300,9 +297,20 @@ export const bsd = {
   /**
    * League detail, used to find the live season id (`current_season.id`).
    * The completed seasons pinned in `data/competitions.ts` carry no fixtures.
+   *
+   * Fixtures — upcoming and recently finished — only exist on the live
+   * campaign, so preview/fixtures agents resolve it through here.
    */
   currentSeason(league: number): Promise<BsdLeagueResponse> {
     return get<BsdLeagueResponse>(`/leagues/${league}/`);
+  },
+
+  /** Live (in-progress) BSD season id for a league id. */
+  async liveSeason(league: number): Promise<number> {
+    const detail = await this.currentSeason(league);
+    const live = detail.current_season?.id;
+    if (!live) throw new Error(`No live season found for league ${league}`);
+    return live;
   },
 
   /** AI-predicted lineups for an upcoming event, with per-player confidence. */

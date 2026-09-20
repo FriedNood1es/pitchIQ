@@ -86,7 +86,6 @@ export interface CompareRequest {
   competition: string;
   teamA: TeamId;
   teamB: TeamId;
-  message?: string;
 }
 
 export interface Intent {

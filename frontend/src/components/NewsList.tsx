@@ -1,24 +1,12 @@
 import { useState } from "react";
 import { NewsItem } from "../types";
+import { formatWhen } from "../dates";
 
 interface Props {
   teamAName: string;
   teamBName: string;
   teamANews: NewsItem[];
   teamBNews: NewsItem[];
-}
-
-/** Handles both ISO timestamps (live feed) and date-only strings (mocks). */
-export function formatWhen(publishedAt: string): string {
-  const date = new Date(publishedAt);
-  if (Number.isNaN(date.getTime())) return publishedAt;
-
-  const minutes = Math.round((Date.now() - date.getTime()) / 60000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  if (minutes < 60 * 24) return `${Math.round(minutes / 60)}h ago`;
-  if (minutes < 60 * 24 * 7) return `${Math.round(minutes / (60 * 24))}d ago`;
-  return date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
 function NewsEntry({ item }: { item: NewsItem }) {

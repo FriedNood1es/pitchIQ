@@ -2,6 +2,23 @@
 
 _Last updated: 2026-09-20_
 
+## 8at. Over-engineering cut (ponytail-audit) ✅ DONE (2026-09-20)
+Deleted ~700 lines + 2 deps, one commit (easy rollback): mock mode gone
+(`mocks/*`, `USE_MOCK_DATA` branches — news degrades to `[]`, never invented
+clubs); `intentAgent`/`reportAgent` inlined into the orchestrator;
+`CompareRequest.message` dropped; `liveSeason.ts` folded into
+`bsd.liveSeason()`; `MockLLMClient` class → literal, stale groq default model
+→ `openai/gpt-oss-20b`; shared `backend/src/utils.ts` (`errMsg`,
+`positionGroup`); `cors`→manual headers, `dotenv`→`process.loadEnvFile()`;
+`bsd.standings` requires explicit args (dead `BSD_LEAGUE`/`BSD_SEASON` env
+dropped from config/`.env.example`/`render.yaml`); dead
+`PreviewControls.tsx` deleted; `selectOptions.tsx` inlined into
+`ComparePicker`; shared `frontend/src/dates.ts` (5 local formatters → 1);
+tailwind scaffold keys; root `build` now builds both workspaces;
+`tsconfig.tsbuildinfo` untracked; stale `workflow/` doc deleted. Both builds
+green. Skipped (product, not bloat): IconSelect, chart.js/RadarChart,
+react-query, useTheme, hash router, crests matcher/cache, HeroAnchors.
+
 ## 8as. README refresh + MIT LICENSE ✅ DONE (2026-09-20)
 README rewritten to the current build (prediction bar, result view, H2H/radar
 grid, news snippets + thumbnails, ESPN badges, mandatory `LLM_MODEL`, new

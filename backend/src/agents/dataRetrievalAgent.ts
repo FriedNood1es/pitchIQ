@@ -3,12 +3,9 @@ import {
   BsdFixtureSummary,
   BsdStandingRow,
 } from "../clients/bsdClient";
-import { config } from "../config";
 import { getCompetition, Competition } from "../data/competitions";
 import { crestColorFor, slugify } from "../data/teamDirectory";
-import { getHeadToHead } from "../mocks/headToHead";
-import { getTeamData } from "../mocks/teams";
-import { getLiveSeasonId } from "./liveSeason";
+import { errMsg, positionGroup } from "../utils";
 import {
   HeadToHeadMatch,
   Injury,
@@ -23,16 +20,7 @@ import {
 export async function runDataRetrievalAgent(
   intent: Intent
 ): Promise<RetrievalResult> {
-  if (config.useMockData) return retrieveMock(intent);
   return retrieveFromBsd(intent);
-}
-
-function retrieveMock(intent: Intent): RetrievalResult {
-  return {
-    teamA: getTeamData(intent.teamA),
-    teamB: getTeamData(intent.teamB),
-    headToHead: getHeadToHead(intent.teamA, intent.teamB),
-  };
 }
 
 // --- BSD provider (default) -------------------------------------------------
@@ -110,7 +98,7 @@ async function fetchTeamNews(
 ): Promise<{ injuries: Injury[]; lineup?: Lineup }> {
   try {
     console.log(`[retrieval] ${teamId}: fetching fixtures + latest lineup...`);
-    const season = await getLiveSeasonId(comp).catch(() => comp.bsdSeason);
+    const season = await bsd.liveSeason(comp.bsdLeague).catch(() => comp.bsdSeason);
     const fixtures = await bsd.teamFixtures(
       comp.bsdLeague,
       season,
@@ -167,15 +155,9 @@ function mapBsdPlayer(p: {
   ai_score?: number | null;
   captain?: boolean;
 }): Lineup["startingXI"][number] {
-  const group: Record<string, string> = {
-    G: "GK",
-    D: "DEF",
-    M: "MID",
-    F: "FWD",
-  };
   return {
     name: p.name,
-    position: group[p.position ?? ""] ?? (p.position || "Unknown"),
+    position: positionGroup(p.position),
     jerseyNumber: p.jersey_number ?? undefined,
     aiScore: p.ai_score != null ? Math.round(p.ai_score * 100) : undefined,
     captain: p.captain,
@@ -295,8 +277,4 @@ function parseForm(form: string): string[] {
 
 function clamp01to100(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function errMsg(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
 }

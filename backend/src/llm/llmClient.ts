@@ -7,18 +7,9 @@ export interface LLMClient {
   readonly kind: "ai" | "template";
 }
 
-/**
- * Deterministic stand-in for a real LLM call: echoes the prompt back, which is
- * the templated prose built by insightAgent. Used when no LLM_API_KEY is set.
- */
-export class MockLLMClient implements LLMClient {
-  readonly kind = "template" as const;
-  async generateInsight(prompt: string): Promise<string> {
-    return prompt;
-  }
-}
-
 /** Real client when LLM_API_KEY is set, else the echo mock (template). */
 export function createLLM(): LLMClient {
-  return config.llm.apiKey ? new RemoteLLMClient() : new MockLLMClient();
+  if (config.llm.apiKey) return new RemoteLLMClient();
+  // Deterministic stand-in: echoes the templated prose built by insightAgent.
+  return { kind: "template", generateInsight: async (prompt: string) => prompt };
 }

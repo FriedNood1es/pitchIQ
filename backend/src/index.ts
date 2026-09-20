@@ -1,5 +1,4 @@
 import dns from "dns";
-import cors from "cors";
 import express from "express";
 
 // Router DNS (dev.opt) blocks site.api.espn.com; Google DNS resolves it.
@@ -15,7 +14,11 @@ import teamRouter from "./routes/team";
 const app = express();
 const port = process.env.PORT ?? 4000;
 
-app.use(cors());
+app.use((_req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
+});
 app.use(express.json());
 app.use("/api", compareRouter);
 app.use("/api", fixturesRouter);

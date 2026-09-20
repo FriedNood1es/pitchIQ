@@ -1,6 +1,7 @@
 import { Competition, TeamId, TeamSummary } from "../types";
-import { IconSelect } from "./IconSelect";
-import { buildCompetitionOptions, buildTeamOptions } from "./selectOptions";
+import { CountryFlag } from "./CountryFlag";
+import { IconSelect, SelectOption } from "./IconSelect";
+import { TeamCrest } from "./TeamCrest";
 
 interface Props {
   competitions: Competition[];
@@ -21,6 +22,21 @@ interface Props {
  * The single compare picker — one component for the initial form and the
  * re-compare bar so the two never drift (they once disagreed on "VS").
  */
+function buildCompetitionOptions(competitions: Competition[]): SelectOption[] {
+  return competitions.map((c) => ({
+    id: c.id,
+    label: c.name,
+    icon: <CountryFlag country={c.country} />,
+  }));
+}
+
+function buildTeamOptions(teams: TeamSummary[], competition?: string): SelectOption[] {
+  return teams.map((t) => ({
+    id: t.id,
+    label: t.name,
+    icon: <TeamCrest name={t.name} crestColor={t.crestColor} competition={competition} />,
+  }));
+}
 export function ComparePicker({
   competitions,
   competition,

@@ -1,10 +1,8 @@
 import { RetrievalResult, ValidatedData, ValidationIssue } from "../types";
 
 /**
- * Checks the retrieved data for missing/stale fields. In the mock pipeline
- * this never needs to trigger a re-fetch, but the issue list is threaded
- * through to the final report so a real Data Retrieval Agent can be
- * plugged in later without changing this contract.
+ * Checks the retrieved data for missing/stale fields. The issue list is
+ * threaded through to the final report so the UI can state gaps plainly.
  */
 export function runDataValidationAgent(data: RetrievalResult): ValidatedData {
   const issues: ValidationIssue[] = [];

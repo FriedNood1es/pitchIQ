@@ -1,5 +1,6 @@
 import { COMPETITIONS } from "../data/competitions";
 import { TeamSummary } from "../types";
+import { errMsg } from "../utils";
 import { listPreviewTeams, PreviewTeam } from "./previewAgent";
 
 /** A team in the global search index, tagged with its competition. */
@@ -13,10 +14,6 @@ const MAX_RESULTS = 8;
 
 interface ScoredResult extends TeamSearchResult {
   score: number;
-}
-
-function errMsg(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
 }
 
 /**

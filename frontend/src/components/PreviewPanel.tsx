@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Lineup, PreviewReport, TeamPreview } from "../types";
+import { formatDateTime as formatDate } from "../dates";
 import { LineupSide } from "./LineupPanel";
 
 interface Props {
@@ -23,18 +24,6 @@ function toLineup(preview?: TeamPreview): Lineup | undefined {
     })),
     substitutes: [],
   };
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
 }
 
 /** Elapsed seconds since mount — the "still working, not stuck" hint. */

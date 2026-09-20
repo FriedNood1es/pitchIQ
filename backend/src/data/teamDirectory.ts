@@ -1,13 +1,11 @@
 import { bsd } from "../clients/bsdClient";
-import { config } from "../config";
 import { getCompetition } from "./competitions";
-import { listMockTeams } from "../mocks/teams";
 import { TeamSummary } from "../types";
 
 /**
  * The team directory is the single source of truth for "which teams exist".
  * Identity is a slug derived from the team name, so it is stable across BSD
- * standings rows and the mock fixtures. The retrieval layer resolves the same
+ * standings rows and fixture lists. The retrieval layer resolves the same
  * slugs back to provider rows, so no hardcoded id catalog is needed — the
  * former teamCatalog.ts is gone.
  */
@@ -120,8 +118,6 @@ function toSummary(name: string): TeamSummary {
 
 /** Teams available for comparison in a given competition. */
 export async function listTeams(competitionId: string): Promise<TeamSummary[]> {
-  if (config.useMockData) return listMockTeams();
-
   const comp = getCompetition(competitionId);
   if (!comp) throw new Error(`Unknown competition "${competitionId}"`);
 

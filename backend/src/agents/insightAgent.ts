@@ -1,5 +1,6 @@
 import { LLMClient } from "../llm/llmClient";
 import { InsightResult, Prediction, ValidatedData } from "../types";
+import { errMsg } from "../utils";
 
 /**
  * Deterministic fallback summary — the "template" that pre-dates the LLM.
@@ -100,10 +101,6 @@ function ordinal(n: number): string {
   const suffixes = ["th", "st", "nd", "rd"];
   const v = n % 100;
   return suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0];
-}
-
-function errMsg(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
 }
 
 /**

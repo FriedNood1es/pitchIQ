@@ -1,8 +1,6 @@
 import { bsd } from "../clients/bsdClient";
-import { config } from "../config";
 import { getCompetition } from "../data/competitions";
 import { slugify } from "../data/teamDirectory";
-import { getTeamData } from "../mocks/teams";
 import { TeamStats } from "../types";
 import { bsdRowToStats } from "./dataRetrievalAgent";
 
@@ -17,10 +15,6 @@ export async function getTeamStats(
   competition: string,
   name: string
 ): Promise<TeamStats> {
-  if (config.useMockData) {
-    return getTeamData(slugify(name)).stats;
-  }
-
   const comp = getCompetition(competition);
   if (!comp) throw new Error(`Unknown competition "${competition}"`);
 

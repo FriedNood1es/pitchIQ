@@ -1,5 +1,5 @@
 import { LLMClient } from "./llmClient";
-import { LLM_BASE_URLS, LLM_DEFAULT_MODELS, config } from "../config";
+import { LLM_BASE_URLS, config } from "../config";
 
 const LLM_TIMEOUT_MS = 10_000;
 
@@ -13,7 +13,7 @@ const LLM_TIMEOUT_MS = 10_000;
 export class RemoteLLMClient implements LLMClient {
   readonly kind = "ai" as const;
   private readonly baseUrl = LLM_BASE_URLS[config.llm.provider];
-  private readonly model = config.llm.model || LLM_DEFAULT_MODELS[config.llm.provider];
+  private readonly model = config.llm.model;
   private readonly apiKey = config.llm.apiKey;
 
   async generateInsight(prompt: string): Promise<string> {

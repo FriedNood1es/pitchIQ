@@ -1,8 +1,6 @@
 import { bsd, BsdFixtureSummary } from "../clients/bsdClient";
 import { COMPETITIONS, Competition, getCompetition } from "../data/competitions";
 import { crestColorFor, slugify } from "../data/teamDirectory";
-import { config } from "../config";
-import { getLiveSeasonId } from "./liveSeason";
 
 export type FixturesStatus = "all" | "finished" | "scheduled" | "live";
 
@@ -59,8 +57,6 @@ export async function listFixtures(
   competition: string | undefined,
   status: FixturesStatus
 ): Promise<Fixture[]> {
-  if (config.useMockData) return mockFixtures(competition);
-
   const key = `${competition ?? "all"}|${status}`;
   const cached = cachedFixtures(key);
   if (cached) return cached;
@@ -84,7 +80,7 @@ export async function listFixtures(
 }
 
 async function leagueFixtures(comp: Competition, status: FixturesStatus): Promise<Fixture[]> {
-  const liveSeason = await getLiveSeasonId(comp);
+  const liveSeason = await bsd.liveSeason(comp.bsdLeague);
 
   const wantFinished = status === "all" || status === "finished";
   const wantScheduled = status === "all" || status === "scheduled";
@@ -153,31 +149,8 @@ function mapFixture(comp: Competition): (f: BsdFixtureSummary) => Fixture {
         name: awayName,
         crestColor: crestColorFor(awayName),
       },
-      homeScore: f.home_score,
-      awayScore: f.away_score,
-    };
+    homeScore: f.home_score,
+    awayScore: f.away_score,
   };
-}
-
-/** Mock fixtures cover only the two clubs with mock data (Arsenal/Chelsea). */
-function mockFixtures(competition?: string): Fixture[] {
-  const comp = getCompetition("premier-league");
-  if (!comp || (competition && competition !== comp.id)) return [];
-  const base: Fixture = {
-    competition: comp.id,
-    competitionName: comp.name,
-    country: comp.country,
-    eventId: 999,
-    date: "2026-08-15T15:00:00Z",
-    status: "scheduled",
-    homeTeam: { id: "arsenal", name: "Arsenal", crestColor: "#EF0107" },
-    awayTeam: { id: "chelsea", name: "Chelsea", crestColor: "#034694" },
-    homeScore: null,
-    awayScore: null,
   };
-  const mk = (over: Partial<Fixture>): Fixture => ({ ...base, ...over });
-  return [
-    mk({ eventId: 1, date: "2026-08-10T19:00:00Z", status: "finished", homeTeam: { ...base.homeTeam }, awayTeam: { ...base.awayTeam }, homeScore: 3, awayScore: 0 }),
-    mk({ eventId: 2, date: "2026-08-15T15:00:00Z", status: "scheduled", homeTeam: { ...base.awayTeam }, awayTeam: { ...base.homeTeam } }),
-  ];
 }

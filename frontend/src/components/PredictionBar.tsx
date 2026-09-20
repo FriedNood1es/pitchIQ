@@ -1,4 +1,4 @@
-import { formatWhen } from "./NewsList";
+import { formatWhen } from "../dates";
 import { Prediction } from "../types";
 
 interface Props {

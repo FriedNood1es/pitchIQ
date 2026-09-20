@@ -1,5 +1,6 @@
 import { KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { fetchStandings } from "../api/client";
+import { formatDay as dayLabel } from "../dates";
 import { CountryFlag } from "./CountryFlag";
 import { LeagueSidebar } from "./LeagueSidebar";
 import { MatchRow } from "./MatchRow";
@@ -44,23 +45,6 @@ const EMPTY_COPY: Record<FixturesStatus, string> = {
   finished: "No finished matches under these filters yet.",
   scheduled: "Nothing scheduled under these filters — try another league.",
 };
-
-function dayLabel(iso: string): string {
-  const d = new Date(iso);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const day = new Date(d);
-  day.setHours(0, 0, 0, 0);
-  const diff = Math.round((day.getTime() - today.getTime()) / 86_400_000);
-  if (diff === 0) return "Today";
-  if (diff === 1) return "Tomorrow";
-  if (diff === -1) return "Yesterday";
-  return d.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-}
 
 /** Split a list into date buckets; newest first for results, else soonest first. */
 function groupByDate(fixtures: Fixture[], status: FixturesStatus) {
