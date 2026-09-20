@@ -182,7 +182,10 @@ export default function App() {
         ? { competition: hashDraft.competition, team: hashDraft.team }
         : null
     );
-    setHashDraft(null);
+    // Compare consumes hashDraft in the effect below once its team list
+    // loads — clearing it here would lose the team IDs (React 18 batches
+    // the setCompetition above, so that effect would still see "").
+    if (hashDraft.mode !== "compare") setHashDraft(null);
   }, [hashDraft, competitions]);
 
   // Apply a compare hash selection once that competition's teams are loaded.

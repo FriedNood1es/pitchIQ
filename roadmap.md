@@ -27,6 +27,15 @@ budget bump (350 → 1500 — reasoning models spend tokens thinking before the
 `content` field fills). Verified live: `insightGeneratedBy=ai` with
 model-written prose; failures still fall back to the template.
 
+## 8ag. Compare survives reload ✅ DONE (2026-09-20)
+Reloading `#/compare/<comp>/<a>/<b>` reset to the first two standings teams.
+Race between two effects: Effect 1 set competition + cleared `hashDraft` in
+one batch, so Effect 2 still saw `competition === ""` and bailed on
+`hashDraft.competition !== competition` — the team IDs died with the draft
+and the fill effect defaulted to teams[0]/teams[1]. Fix: Effect 1 no longer
+clears `hashDraft` for compare mode; Effect 2 consumes it once teams load
+(it already cleared the draft there). Team/fixtures paths unchanged.
+
 ## 8af. Crest matcher: aliases, ø fix, reverse tiebreak ✅ DONE (2026-09-20)
 BSD names carry affixes ESPN drops ("FC Barcelona", "Levante UD") and a few
 clubs differ entirely ("Real Racing Club" vs "Racing Santander", "Inter" vs
