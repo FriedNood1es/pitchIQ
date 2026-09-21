@@ -38,7 +38,7 @@ function NewsEntry({ item }: { item: NewsItem }) {
       {showThumb && (
         <img
           src={item.thumbnail}
-          alt=""
+          alt={item.headline}
           loading="lazy"
           onError={() => setImgOk(false)}
           className="h-[72px] w-28 shrink-0 rounded-lg object-cover"

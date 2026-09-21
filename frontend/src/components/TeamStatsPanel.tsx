@@ -23,7 +23,15 @@ function RatingBar({ label, value }: { label: string; value: number }) {
         <span className="font-semibold text-[var(--text-2)]">{label}</span>
         <span className="tabular-nums text-[var(--text)]">{value}</span>
       </div>
-      <div className="h-2 rounded-full" style={{ background: "var(--surface-2)" }}>
+      <div
+        role="progressbar"
+        aria-valuenow={Math.round(value)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={label}
+        className="h-2 rounded-full"
+        style={{ background: "var(--surface-2)" }}
+      >
         <div
           className="h-2 rounded-full"
           style={{ width: `${Math.max(0, Math.min(100, value))}%`, background: "var(--brand)" }}

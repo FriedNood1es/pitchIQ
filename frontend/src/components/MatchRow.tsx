@@ -100,7 +100,7 @@ export function MatchRow({
       type="button"
       onClick={onClick}
       disabled={pending}
-      aria-busy={pending || undefined}
+      aria-busy={pending ? "true" : undefined}
       title={
         pending
           ? "Loading comparison…"
