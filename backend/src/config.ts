@@ -1,4 +1,4 @@
-process.loadEnvFile();
+try { process.loadEnvFile(); } catch { /* .env absent in production — env vars come from Render */ }
 
 /**
  * Central runtime config, sourced from environment variables (.env in dev).
