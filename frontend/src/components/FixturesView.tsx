@@ -378,7 +378,14 @@ export function FixturesView({
   const dayIndex = useMemo(() => new Map(days.map((d, i) => [d.key, i])), [days]);
   const [dayIdx, setDayIdx] = useState(0);
   useEffect(() => {
-    setDayIdx(0);
+    const now = Date.now();
+    const closest = status === "finished"
+      ? 0
+      : days.reduce((best, d, i) => {
+          const diff = Math.abs(new Date(d.iso).getTime() - now);
+          return diff < best.diff ? { diff, idx: i } : best;
+        }, { diff: Infinity, idx: 0 }).idx;
+    setDayIdx(closest);
     setVisibleCount({});
   }, [competition, status]);
 
