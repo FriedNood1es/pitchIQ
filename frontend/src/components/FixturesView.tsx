@@ -1,6 +1,6 @@
 import { KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { fetchStandings } from "../api/client";
-import { formatDay as dayLabel } from "../dates";
+import { formatDay as dayLabel, toInputDate, fromInputDate } from "../dates";
 import { points as pts } from "../edge";
 import { useNow } from "../hooks/useCountdown";
 import { CountryFlag } from "./CountryFlag";
@@ -389,6 +389,75 @@ export function FixturesView({
     setVisibleCount({});
   }, [competition, status]);
 
+  // All-leagues per-calendar-day mode: the stepper walks real days, not just
+  // match days — empty days render a "no matches" card. Focused-league mode
+  // keeps match-day stepping above. Reset to today when the league changes;
+  // status switches keep the selected day (bounds recompute from new data).
+  const [selectedDay, setSelectedDay] = useState(() => new Date().toDateString());
+  useEffect(() => {
+    setSelectedDay(new Date().toDateString());
+  }, [competition]);
+
+  // Clamp the calendar + arrows to the loaded window (20 recent + 30
+  // upcoming per league) — dates outside it are unservable, not empty.
+  const dayBounds = useMemo(() => {
+    if (!fixtures || fixtures.length === 0) return null;
+    let min = Infinity;
+    let max = -Infinity;
+    for (const f of fixtures) {
+      const t = new Date(f.date).getTime();
+      if (t < min) min = t;
+      if (t > max) max = t;
+    }
+    const atMidnight = (t: number) => {
+      const d = new Date(t);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
+    return { min: atMidnight(min), max: atMidnight(max) };
+  }, [fixtures]);
+
+  const selTime = new Date(selectedDay).getTime();
+  const atMinDay = dayBounds !== null && selTime <= dayBounds.min.getTime();
+  const atMaxDay = dayBounds !== null && selTime >= dayBounds.max.getTime();
+
+  function stepDay(dir: 1 | -1) {
+    const d = new Date(selectedDay);
+    d.setDate(d.getDate() + dir);
+    if (dayBounds) {
+      const t = d.getTime();
+      if (t < dayBounds.min.getTime()) d.setTime(dayBounds.min.getTime());
+      else if (t > dayBounds.max.getTime()) d.setTime(dayBounds.max.getTime());
+    }
+    setSelectedDay(d.toDateString());
+  }
+
+  // Bands show only the selected day; empty bands hide and an empty day
+  // renders one global card below. Built from the unbudgeted groups — the
+  // 20-match page budget could otherwise cut the selected day's matches.
+  const shownGroups = useMemo(() => {
+    if (competition) return visibleGroups;
+    return groups
+      .map((g) => {
+        const dates = g.dates.filter((d) => d.date === selectedDay);
+        const total = dates.reduce((n, d) => n + d.fixtures.length, 0);
+        return { ...g, total, hidden: 0, dates, streak: bandStreak(g.dates) };
+      })
+      .filter((g) => g.dates.length > 0);
+  }, [groups, competition, selectedDay]);
+
+  // Noon, not midnight: toISOString is UTC and midnight local shifts the day.
+  const selectedLabel = useMemo(() => {
+    const noon = new Date(selectedDay);
+    noon.setHours(12, 0, 0, 0);
+    return dayLabel(noon.toISOString());
+  }, [selectedDay]);
+  const statusWord = STATUSES.find((s) => s.id === status)?.label.toLowerCase() ?? "";
+  const emptyDayCopy =
+    status === "all"
+      ? `No matches on ${selectedLabel}.`
+      : `No ${statusWord} matches on ${selectedLabel}.`;
+
   // Sliding active-pill backdrop: measured off the active button so the
   // green highlight glides between pills instead of snapping.
   const trackRef = useRef<HTMLDivElement>(null);
@@ -575,32 +644,71 @@ export function FixturesView({
             </button>
           ))}
         </div>
-        {days.length > 1 && (
-          <div className="flex items-center gap-1" role="group" aria-label="Jump to day">
-            <button
-              type="button"
-              onClick={() => stepTo(safeIdx - 1)}
-              disabled={safeIdx === 0}
-              aria-label="Previous day"
-              title="Previous day"
-              className="min-h-[44px] rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
-            >
-              <span aria-hidden="true">‹</span>
-            </button>
-            <span aria-live="polite" className="min-w-24 text-center text-sm font-bold text-[var(--text)]">
-              {dayLabel(days[safeIdx].iso)}
-            </span>
-            <button
-              type="button"
-              onClick={() => stepTo(safeIdx + 1)}
-              disabled={safeIdx === days.length - 1}
-              aria-label="Next day"
-              title="Next day"
-              className="min-h-[44px] rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
-            >
-              <span aria-hidden="true">›</span>
-            </button>
-          </div>
+        {competition ? (
+          days.length > 1 && (
+            <div className="flex items-center gap-1" role="group" aria-label="Jump to day">
+              <button
+                type="button"
+                onClick={() => stepTo(safeIdx - 1)}
+                disabled={safeIdx === 0}
+                aria-label="Previous day"
+                title="Previous day"
+                className="min-h-[44px] rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
+              >
+                <span aria-hidden="true">‹</span>
+              </button>
+              <span aria-live="polite" className="min-w-24 text-center text-sm font-bold text-[var(--text)]">
+                {dayLabel(days[safeIdx].iso)}
+              </span>
+              <button
+                type="button"
+                onClick={() => stepTo(safeIdx + 1)}
+                disabled={safeIdx === days.length - 1}
+                aria-label="Next day"
+                title="Next day"
+                className="min-h-[44px] rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
+              >
+                <span aria-hidden="true">›</span>
+              </button>
+            </div>
+          )
+        ) : (
+          dayBounds && (
+            <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Pick a match day">
+              <button
+                type="button"
+                onClick={() => stepDay(-1)}
+                disabled={atMinDay}
+                aria-label="Previous day"
+                title="Previous day"
+                className="min-h-[44px] rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
+              >
+                <span aria-hidden="true">‹</span>
+              </button>
+              <input
+                type="date"
+                value={toInputDate(new Date(selectedDay))}
+                min={toInputDate(dayBounds.min)}
+                max={toInputDate(dayBounds.max)}
+                onChange={(e) => {
+                  if (e.target.value) setSelectedDay(fromInputDate(e.target.value).toDateString());
+                }}
+                aria-label="Pick a match date"
+                className="rounded-lg border px-2 py-1 text-sm font-bold text-[var(--text)]"
+                style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+              />
+              <button
+                type="button"
+                onClick={() => stepDay(1)}
+                disabled={atMaxDay}
+                aria-label="Next day"
+                title="Next day"
+                className="min-h-[44px] rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
+              >
+                <span aria-hidden="true">›</span>
+              </button>
+            </div>
+          )
         )}
         </div>
         <div className="mt-4 space-y-2.5 lg:hidden">
@@ -674,7 +782,7 @@ export function FixturesView({
 
       {!isError && fixtures && fixtures.length > 0 && (
         <div className="space-y-6">
-          {visibleGroups.map((league) => {
+          {shownGroups.map((league) => {
             const shut = collapsed.has(league.key);
             // The standings table stacks below the matches only in the
             // focused league view — in the overview it would repeat in all
@@ -716,13 +824,14 @@ export function FixturesView({
                         onNavigate={onNavigate}
                         pendingEventId={pendingEventId}
                         anchor={
-                          dayIndex.get(d.date) === undefined
-                            ? undefined
-                            : `fixtures-day-${dayIndex.get(d.date)}`
+                          competition && dayIndex.get(d.date) !== undefined
+                            ? `fixtures-day-${dayIndex.get(d.date)}`
+                            : undefined
                         }
                       />
                     ))}
-                    {(league.hidden > 0 || fullyShown) && (
+                    {/* hidden counts span other days — pagination is league-view only. */}
+                    {(league.hidden > 0 || fullyShown) && focused && (
                       <button
                         type="button"
                         onClick={() =>
@@ -762,6 +871,11 @@ export function FixturesView({
               </section>
             );
           })}
+          {!competition && shownGroups.length === 0 && (
+            <div className="tl-card p-5 text-sm text-[var(--muted)]">
+              {emptyDayCopy}
+            </div>
+          )}
         </div>
       )}
         </div>

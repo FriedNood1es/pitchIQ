@@ -30,6 +30,7 @@
   --draw: #6b7280;
   --loss: #e5484d;
   --grid: #2a2b30;
+  color-scheme: dark; /* native controls (date picker) follow the theme */
 }
 
 @media (prefers-color-scheme: light) {
@@ -75,6 +76,7 @@
   --draw: #8a8f98;
   --loss: #d03b3b;
   --grid: #e1e0d9;
+  color-scheme: light;
 }
 
 html,
@@ -211,6 +213,7 @@ summary:focus-visible {
    centers vertically by default, so short controls just gain padding. */
 button,
 input[type="search"],
+input[type="date"],
 [role="option"] {
   min-height: 44px;
 }

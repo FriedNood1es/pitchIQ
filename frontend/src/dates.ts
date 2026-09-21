@@ -18,6 +18,19 @@ export function formatDay(iso: string): string {
   });
 }
 
+/** "2026-09-21" in local time — value format for <input type="date">. */
+export function toInputDate(d: Date): string {
+  const m = `${d.getMonth() + 1}`.padStart(2, "0");
+  const day = `${d.getDate()}`.padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+/** Parse an <input type="date"> value as local midnight (new Date("2026-09-21") is UTC and shifts the day). */
+export function fromInputDate(v: string): Date {
+  const [y, m, d] = v.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 /** "20 Sep 2026" — compact date for past meetings. */
 export function formatDateShort(date: string): string {
   const parsed = new Date(date);
