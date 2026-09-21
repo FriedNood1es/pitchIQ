@@ -51,7 +51,7 @@ export function PreviewPanel({ report, isFetching, error, onRetry }: Props) {
           <span
             className="inline-block h-4 w-4 animate-spin rounded-full border-2"
             style={{ borderColor: "var(--border)", borderTopColor: "var(--brand)" }}
-            aria-hidden
+            aria-hidden="true"
           />
           Fetching predicted lineups...{elapsed > 1 && ` (${elapsed}s)`}
         </div>
