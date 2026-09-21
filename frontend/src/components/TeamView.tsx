@@ -96,7 +96,7 @@ export function TeamView({
         <button
           type="button"
           onClick={onBack}
-          className="rounded-lg border px-2.5 py-1.5 text-sm font-bold text-[var(--text-2)] transition hover:text-[var(--text)]"
+          className="rounded-[10px] border px-2.5 py-1.5 text-sm font-bold text-[var(--text-2)] transition hover:text-[var(--text)]"
           style={{ borderColor: "var(--border)" }}
         >
           ← Fixtures

@@ -74,7 +74,7 @@ export function LeagueSidebar({
   }
 
   return (
-    <aside className="tl-card hidden w-60 shrink-0 space-y-1 p-2 lg:block" aria-label="Leagues and teams">
+    <aside className="tl-card hidden w-60 shrink-0 space-y-0.5 p-2 lg:block" aria-label="Leagues and teams">
       {favorites.length > 0 && (
         <>
           <p className="tl-card-title px-2 pb-1 pt-1">My teams</p>

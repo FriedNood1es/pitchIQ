@@ -56,7 +56,7 @@ export function ComparePicker({
   if (layout === "bar") {
     return (
       <div className="border-b border-[var(--border)] bg-[var(--surface-2)] px-4 py-3">
-        <div className="mx-auto flex max-w-4xl flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="mx-auto flex max-w-4xl flex-col gap-2 sm:flex-row sm:items-center">
           <IconSelect
             label="Competition"
             size="sm"
@@ -104,7 +104,7 @@ export function ComparePicker({
   }
 
   return (
-    <div className="tl-card flex flex-col gap-4 p-4">
+    <div className="tl-card flex flex-col gap-3 p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <span className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)] sm:w-28">
           Competition
@@ -119,7 +119,7 @@ export function ComparePicker({
         />
       </div>
 
-      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col items-stretch gap-2.5 sm:flex-row sm:items-center">
         <IconSelect
           label="Home team"
           className="w-full sm:flex-1"

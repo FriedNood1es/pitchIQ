@@ -110,7 +110,7 @@ export function MatchRow({
         pending ? "cursor-wait opacity-60" : ""
       }`}
     >
-      <span className="flex w-14 flex-col items-start justify-center gap-0.5 text-sm">
+      <span className="flex w-[3.5rem] flex-col items-start justify-center gap-0.5 text-sm">
         {fixture.status === "finished" && (
           <>
             <span className="text-xs font-bold tabular-nums text-[var(--muted)]">FT</span>
@@ -120,7 +120,7 @@ export function MatchRow({
         {fixture.status === "live" && <LiveCell date={fixture.date} now={now} />}
         {fixture.status === "scheduled" && <CountdownCell date={fixture.date} />}
       </span>
-      <span className="flex min-w-0 flex-col justify-center gap-1 py-0.5">
+      <span className="flex min-w-0 flex-col justify-center gap-0.5 py-0.5">
         <TeamLine
           name={fixture.homeTeam.name}
           crestColor={fixture.homeTeam.crestColor}

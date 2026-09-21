@@ -489,7 +489,7 @@ export function FixturesView({
             onClick={() => setHero(false)}
             aria-label="Hide introduction"
             title="Hide introduction"
-            className="shrink-0 rounded-lg px-2 py-1 text-sm font-bold text-[var(--muted)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            className="shrink-0 rounded-[10px] px-2.5 py-1 text-sm font-bold text-[var(--muted)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
           >
             Hide ▲
           </button>
@@ -539,13 +539,13 @@ export function FixturesView({
             type="button"
             onClick={() => setHero(true)}
             aria-label="Show introduction"
-            className="ml-auto shrink-0 rounded-lg px-2 py-1 text-sm font-bold text-[var(--muted)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            className="ml-auto shrink-0 rounded-[10px] px-2.5 py-1 text-sm font-bold text-[var(--muted)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
           >
             Intro ▼
           </button>
         </section>
       )}
-      <div className="flex items-start gap-5">
+      <div className="flex items-start gap-4">
         <LeagueSidebar
           competitions={orderedCompetitions}
           competition={competition}

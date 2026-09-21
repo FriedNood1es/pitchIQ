@@ -49,10 +49,7 @@ function NewsEntry({ item }: { item: NewsItem }) {
   );
 
   return (
-    <li
-      className="border-l pl-3 text-sm"
-      style={{ borderColor: "var(--border)" }}
-    >
+    <li className="border-b pb-3 text-sm last:border-b-0 last:pb-0" style={{ borderColor: "var(--border)" }}>
       {item.url ? (
         <a
           href={item.url}
@@ -122,7 +119,7 @@ export function NewsList({ teamAName, teamBName, teamANews, teamBNews }: Props) 
       open={expanded}
       onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
     >
-      <summary className="cursor-pointer">
+      <summary className="cursor-pointer select-none">
         <h2 className="tl-card-title">
           Latest News{" "}
           <span className="font-extrabold tabular-nums">

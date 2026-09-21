@@ -9,7 +9,7 @@ function Headline({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border p-3 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       <div className="text-xl font-extrabold tabular-nums text-[var(--text)]">{value}</div>
-      <div className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+      <div className="mt-1 text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--muted)]">
         {label}
       </div>
     </div>

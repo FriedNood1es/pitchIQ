@@ -167,7 +167,7 @@ export function LineupPanel({
   if (!hasAny) {
     return (
       <details className="tl-card px-5 py-4" open>
-        <summary className="tl-card-title cursor-pointer">Team News &amp; Lineups</summary>
+        <summary className="tl-card-title cursor-pointer select-none">Team News &amp; Lineups</summary>
         <p className="mt-2 text-sm text-[var(--muted)]">
           No lineup or injury data on record for either team's most recent fixture.
         </p>
@@ -177,7 +177,7 @@ export function LineupPanel({
 
   return (
     <details className="tl-card px-5 py-4">
-      <summary className="tl-card-title cursor-pointer">Team News &amp; Lineups</summary>
+      <summary className="tl-card-title cursor-pointer select-none">Team News &amp; Lineups</summary>
       <p className="mt-1 text-xs text-[var(--muted)]">
         AI scores (0–100) rate how sure the model is about each starter —
         higher means surer. © marks the captain.

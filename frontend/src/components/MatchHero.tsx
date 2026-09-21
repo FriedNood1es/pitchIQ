@@ -65,10 +65,10 @@ function TeamBlock({
           className="inline-flex items-center gap-1.5 font-semibold"
           style={{ color: "var(--text)" }}
         >
-          <span className="h-2.5 w-2.5 rounded-full" style={{ background: seriesColor }} />
+          <span className="h-2 w-2 rounded-full" style={{ background: seriesColor }} />
           #{team.standingPosition}
         </span>
-        <span>·</span>
+        <span className="text-[var(--muted)]">·</span>
         <span>{points(team)} pts</span>
       </div>
       <FormPills form={team.form} align={align} />
@@ -93,7 +93,7 @@ export function MatchHero({ competitionName, competition, teamA, teamB, edge, re
       <h1 className="sr-only">
         {teamA.name} versus {teamB.name}, {competitionName}
       </h1>
-      <div className="text-center text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-4">
+      <div className="text-center text-xs font-semibold uppercase tracking-wider text-[var(--muted)] mb-3">
         {competitionName}
       </div>
       <div className="flex items-start gap-3">
@@ -128,13 +128,13 @@ export function MatchHero({ competitionName, competition, teamA, teamB, edge, re
       <p className="mt-3 text-center text-base font-extrabold text-[var(--text)]">
         {call}
         <span
-          className="ml-2 rounded-full px-2 py-0.5 align-middle text-xs font-bold"
+          className="ml-2 inline-flex items-center rounded-full px-2 py-0.5 align-middle text-[0.7rem] font-bold uppercase tracking-wide"
           style={{ background: "var(--surface-3)", color: "var(--text-2)" }}
         >
           {edge.leader ? edge.strength : "Even"}
         </span>
       </p>
-      <p className="mt-1 text-center text-xs text-[var(--text-2)]">
+      <p className="mt-1 text-center text-xs leading-relaxed text-[var(--text-2)]">
         Data edge {valueLabel} · {edge.reasons.join(" · ")}
       </p>
     </div>
@@ -154,8 +154,8 @@ export function HeroAnchors({ showPrediction = true }: { showPrediction?: boolea
   return (
     <nav
       aria-label="Report sections"
-      className="tl-card z-10 flex gap-1.5 overflow-x-auto px-3 py-2 lg:sticky"
-      style={{ top: "80px" }}
+      className="tl-card z-10 flex gap-1 overflow-x-auto px-3 py-2 lg:sticky"
+      style={{ top: "80px", boxShadow: "0 1px 0 0 var(--border)" }}
     >
       {anchors.map(([id, label]) => (
         <button
@@ -166,7 +166,7 @@ export function HeroAnchors({ showPrediction = true }: { showPrediction?: boolea
             jump(id);
           }}
           aria-current={current === id ? "location" : undefined}
-          className="shrink-0 rounded-full border px-3 py-1 text-xs font-bold transition hover:bg-[var(--surface-2)]"
+          className="shrink-0 rounded-full border px-2.5 py-1 text-xs font-bold transition hover:bg-[var(--surface-2)]"
           style={{
             borderColor: current === id ? "var(--brand)" : "var(--border)",
             color: current === id ? "var(--text)" : "var(--text-2)",

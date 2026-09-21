@@ -117,7 +117,7 @@ export function TeamSearchBox({ onSelect }: Props) {
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={onInputKeyDown}
-        className="w-full max-w-[14rem] rounded-lg border px-3 py-1.5 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus-visible:border-[var(--brand)] sm:w-56 sm:max-w-none"
+        className="w-full max-w-[14rem] rounded-[10px] border px-3 py-1.5 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus-visible:border-[var(--brand)] sm:w-56 sm:max-w-none"
         style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
       />
       {showHint && (

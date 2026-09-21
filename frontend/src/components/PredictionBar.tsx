@@ -30,7 +30,7 @@ export function PredictionBar({ teamA, teamB, prediction, generatedBy, insight, 
     <div id="compare-prediction" className="tl-card scroll-mt-24 p-5">
       <div className="mb-3 flex items-center gap-2">
         <span
-          className="rounded px-1.5 py-0.5 text-[0.75rem] font-bold uppercase tracking-wide"
+          className="rounded px-1.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide"
           style={{ background: "var(--brand)", color: "var(--brand-ink)" }}
           title={
             generatedBy === "ai"
@@ -42,10 +42,10 @@ export function PredictionBar({ teamA, teamB, prediction, generatedBy, insight, 
         </span>
         <h2 className="tl-card-title">Match Prediction</h2>
         <span
-          className="ml-auto rounded-full px-2 py-0.5 text-[0.75rem] font-bold uppercase tracking-wide"
+          className="ml-auto rounded-full px-2 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide"
           style={{ background: "var(--surface-3)", color: confColor }}
         >
-          {confidence} confidence
+          {confidence}
         </span>
       </div>
       <div
@@ -84,7 +84,7 @@ export function PredictionBar({ teamA, teamB, prediction, generatedBy, insight, 
           {teamB}
         </span>
       </div>
-      <p className="mt-3 border-l pl-4 text-[0.85rem] leading-relaxed text-[var(--text-2)]" style={{ borderColor: "var(--brand)" }}>
+      <p className="mt-3 border-l-2 pl-3 text-[0.85rem] leading-relaxed text-[var(--text-2)]" style={{ borderColor: "var(--brand)" }}>
         Key factor: {keyFactor}
       </p>
       {insight && (

@@ -71,16 +71,16 @@ function Row({ row }: { row: StatRow }) {
 export function StatComparison({ rows, teamAName, teamBName }: Props) {
   return (
     <div className="tl-card overflow-x-auto p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h2 className="tl-card-title">Key Stats</h2>
-        <div className="flex items-center gap-4 text-xs font-semibold text-[var(--text-2)]">
+        <div className="flex items-center gap-3 text-xs font-semibold text-[var(--text-2)]">
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--team-a)" }} />
-            <span className="max-w-36 truncate sm:max-w-48" title={teamAName}>{teamAName}</span>
+            <span className="h-2 w-2 rounded-full" style={{ background: "var(--team-a)" }} />
+            <span className="max-w-32 truncate sm:max-w-40" title={teamAName}>{teamAName}</span>
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--team-b)" }} />
-            <span className="max-w-36 truncate sm:max-w-48" title={teamBName}>{teamBName}</span>
+            <span className="h-2 w-2 rounded-full" style={{ background: "var(--team-b)" }} />
+            <span className="max-w-32 truncate sm:max-w-40" title={teamBName}>{teamBName}</span>
           </span>
         </div>
       </div>
