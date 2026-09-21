@@ -467,10 +467,12 @@ export function FixturesView({
   useEffect(() => {
     if (!competition || collapsed.has(competition)) return;
     if (tables[competition] || tableErrors[competition]) return;
+    let ignore = false;
     fetchStandings(competition).then(
-      (rows) => setTables((prev) => ({ ...prev, [competition]: rows })),
-      (err) => setTableErrors((prev) => ({ ...prev, [competition]: (err as Error).message }))
+      (rows) => { if (!ignore) setTables((prev) => ({ ...prev, [competition]: rows })); },
+      (err) => { if (!ignore) setTableErrors((prev) => ({ ...prev, [competition]: (err as Error).message })); }
     );
+    return () => { ignore = true; };
   }, [competition, collapsed, tables, tableErrors]);
 
   return (

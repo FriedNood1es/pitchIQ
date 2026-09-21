@@ -109,7 +109,7 @@ export function CountryFlag({ country, width = 22 }: Props) {
         height="1.94"
         rx="0.06"
         fill="none"
-        stroke="rgba(110,110,110,0.7)"
+        stroke="var(--border)"
         strokeWidth="0.13"
       />
     </svg>

@@ -7,7 +7,6 @@ import {
   RadialLinearScale,
   Tooltip,
 } from "chart.js";
-import { useMemo } from "react";
 import { Radar } from "react-chartjs-2";
 import { RadarDataset } from "../types";
 
@@ -25,10 +24,11 @@ interface Props {
 
 // 33 = ~20% alpha for the area wash.
 export function RadarChart({ labels, datasets }: Props) {
-  const series = useMemo(() => [token("--team-a"), token("--team-b")], []);
-  const grid = useMemo(() => token("--grid"), []);
-  const text2 = useMemo(() => token("--text-2"), []);
-  const muted = useMemo(() => token("--muted"), []);
+  // Read per render — tokens follow the live theme toggle; chart renders rarely.
+  const series = [token("--team-a"), token("--team-b")];
+  const grid = token("--grid");
+  const text2 = token("--text-2");
+  const muted = token("--muted");
   const data = {
     labels,
     datasets: datasets.map((dataset, i) => ({
