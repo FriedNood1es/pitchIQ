@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useFavoriteTeams } from "../hooks/useFavoriteTeams";
 import { Competition, TeamSearchResult } from "../types";
 import { CountryFlag } from "./CountryFlag";
@@ -24,9 +25,9 @@ export function LeagueSidebar({
   onSelectTeam,
 }: Props) {
   const [favorites] = useFavoriteTeams();
-  const pinnedSet = new Set(pinned);
-  const pinnedComps = competitions.filter((c) => pinnedSet.has(c.id));
-  const rest = competitions.filter((c) => !pinnedSet.has(c.id));
+  const pinnedSet = useMemo(() => new Set(pinned), [pinned]);
+  const pinnedComps = useMemo(() => competitions.filter((c) => pinnedSet.has(c.id)), [competitions, pinnedSet]);
+  const rest = useMemo(() => competitions.filter((c) => !pinnedSet.has(c.id)), [competitions, pinnedSet]);
 
   function leagueRow(id: string, name: string, country: string) {
     const active = competition === id;
