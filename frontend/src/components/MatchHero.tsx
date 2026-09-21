@@ -165,7 +165,7 @@ export function HeroAnchors({ showPrediction = true }: { showPrediction?: boolea
             setCurrent(id);
             jump(id);
           }}
-          aria-current={current === id ? "page" : undefined}
+          aria-current={current === id ? "location" : undefined}
           className="shrink-0 rounded-full border px-3 py-1 text-xs font-bold transition hover:bg-[var(--surface-2)]"
           style={{
             borderColor: current === id ? "var(--brand)" : "var(--border)",

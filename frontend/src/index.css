@@ -20,7 +20,7 @@
   --ring: rgba(255, 255, 255, 0.14);
   --text: #f2f3f5;
   --text-2: #b0b3ba;
-  --muted: #9ea1a9;
+  --muted: #a8abb3;
   --brand: #17c964; /* pitch green — PitchIQ accent, used sparingly */
   --brand-ink: #052e16;
   --on-color: #ffffff; /* text on saturated badges/pills (LIVE, monograms, form) */
@@ -42,9 +42,9 @@
     --ring: rgba(11, 11, 11, 0.18);
     --text: #0b1220;
     --text-2: #52565f;
-    --muted: #5f6368;
+    --muted: #595d65;
     --brand: #0f9d58;
-    --brand-ink: #ffffff;
+    --brand-ink: #052e16;
     --on-color: #ffffff;
     --team-a: #2a78d6;
     --team-b: #e34948;
@@ -65,9 +65,9 @@
   --text: #0b1220;
   --text-2: #52565f;
   /* Same value as the OS-follows-light block above — one light muted, not two. */
-  --muted: #5f6368;
+  --muted: #595d65;
   --brand: #0f9d58;
-  --brand-ink: #ffffff;
+  --brand-ink: #052e16;
   --on-color: #ffffff;
   --team-a: #2a78d6;
   --team-b: #e34948;

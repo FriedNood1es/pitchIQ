@@ -164,6 +164,7 @@ function StandingsTable({ rows, competition }: { rows: TeamStats[]; competition:
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
+        <caption className="sr-only">{competition} standings</caption>
         <thead>
           <tr className="text-xs uppercase tracking-wide text-[var(--muted)]">
             <th scope="col" className="w-8 px-2 py-1 text-right font-semibold">#</th>
