@@ -70,7 +70,7 @@ function Row({ row }: { row: StatRow }) {
 
 export function StatComparison({ rows, teamAName, teamBName }: Props) {
   return (
-    <div className="tl-card p-5">
+    <div className="tl-card overflow-x-auto p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="tl-card-title">Key Stats</h2>
         <div className="flex items-center gap-4 text-xs font-semibold text-[var(--text-2)]">

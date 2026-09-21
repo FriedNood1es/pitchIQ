@@ -596,7 +596,7 @@ export function FixturesView({
               disabled={safeIdx === 0}
               aria-label="Previous day"
               title="Previous day"
-              className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
+              className="min-h-[44px] rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
             >
               <span aria-hidden="true">‹</span>
             </button>
@@ -609,7 +609,7 @@ export function FixturesView({
               disabled={safeIdx === days.length - 1}
               aria-label="Next day"
               title="Next day"
-              className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
+              className="min-h-[44px] rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
             >
               <span aria-hidden="true">›</span>
             </button>
