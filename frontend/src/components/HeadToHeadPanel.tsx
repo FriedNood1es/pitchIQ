@@ -17,7 +17,7 @@ interface Props {
 export function HeadToHeadPanel({ headToHead, teamA, teamAName, teamBName }: Props) {
   if (headToHead.length === 0) {
     return (
-      <div className="tl-card p-5">
+      <div className="tl-card h-full p-5">
         <h2 className="tl-card-title">Head-to-Head</h2>
         <p className="mt-2 text-sm text-[var(--muted)]">
           No recent meetings on record for this pairing.
@@ -27,7 +27,7 @@ export function HeadToHeadPanel({ headToHead, teamA, teamAName, teamBName }: Pro
   }
 
   return (
-    <div className="tl-card p-5">
+    <div className="tl-card h-full p-5">
       <h2 className="tl-card-title">Head-to-Head</h2>
       <ul className="mt-2 tl-divide">
         {headToHead.map((m, i) => {

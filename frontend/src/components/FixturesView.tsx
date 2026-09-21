@@ -407,27 +407,6 @@ export function FixturesView({
       ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   }
 
-  // Survive interruption (reload, tab switch): restore the stepped-to day by
-  // stable date key — not index, the list shifts as fixtures update — and the
-  // scroll offset. Session-scoped; each restores once so later refetches
-  // never yank the viewport.
-  const restoredDayRef = useRef(false);
-  const restoredScrollRef = useRef(false);
-  useEffect(() => {
-    if (days.length === 0 || restoredDayRef.current) return;
-    restoredDayRef.current = true;
-    let key: string | null = null;
-    try {
-      key = sessionStorage.getItem("pitchiq:fixtures-day");
-    } catch {
-      // Private mode — start at the default day.
-    }
-    const i = key ? days.findIndex((d) => d.key === key) : 0;
-    if (i > 0) {
-      setDayIdx(i);
-      document.getElementById(`fixtures-day-${i}`)?.scrollIntoView({ block: "start" });
-    }
-  }, [days]);
   useEffect(() => {
     if (days.length === 0) return;
     try {
@@ -436,6 +415,7 @@ export function FixturesView({
       // Private mode — the day just doesn't persist.
     }
   }, [days, safeIdx]);
+  const restoredScrollRef = useRef(false);
   useEffect(() => {
     if (!fixtures || restoredScrollRef.current) return;
     restoredScrollRef.current = true;
