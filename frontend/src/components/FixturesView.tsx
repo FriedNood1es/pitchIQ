@@ -475,6 +475,9 @@ export function FixturesView({
     return () => ro.disconnect();
   }, []);
   const safeIdx = days.length === 0 ? 0 : Math.min(dayIdx, days.length - 1);
+  // Finished days sort newest-first, so "previous" (older) is index +1 there
+  // and index -1 everywhere else — ‹ always walks older, › always newer.
+  const back = status === "finished" ? 1 : -1;
   function stepTo(i: number) {
     setDayIdx(i);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -649,8 +652,8 @@ export function FixturesView({
             <div className="flex items-center gap-1" role="group" aria-label="Jump to day">
               <button
                 type="button"
-                onClick={() => stepTo(safeIdx - 1)}
-                disabled={safeIdx === 0}
+                onClick={() => stepTo(safeIdx + back)}
+                disabled={safeIdx + back < 0 || safeIdx + back > days.length - 1}
                 aria-label="Previous day"
                 title="Previous day"
                 className="min-h-[44px] rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
@@ -662,8 +665,8 @@ export function FixturesView({
               </span>
               <button
                 type="button"
-                onClick={() => stepTo(safeIdx + 1)}
-                disabled={safeIdx === days.length - 1}
+                onClick={() => stepTo(safeIdx - back)}
+                disabled={safeIdx - back < 0 || safeIdx - back > days.length - 1}
                 aria-label="Next day"
                 title="Next day"
                 className="min-h-[44px] rounded-lg px-2 py-1 text-sm font-bold text-[var(--text-2)] transition hover:bg-[var(--surface-2)] disabled:opacity-40"
