@@ -8,6 +8,10 @@ interface Props {
   isFetching: boolean;
   error?: Error | null;
   onRetry: () => void;
+  /** Which side is the dashboard's own club — it leads, the other folds away. */
+  ownSide?: "home" | "away" | null;
+  /** Own club's brand color for the accent (hex only). */
+  ownColor?: string;
 }
 
 function toLineup(preview?: TeamPreview): Lineup | undefined {
@@ -40,7 +44,7 @@ function useElapsed(active: boolean): number {
   return elapsed;
 }
 
-export function PreviewPanel({ report, isFetching, error, onRetry }: Props) {
+export function PreviewPanel({ report, isFetching, error, onRetry, ownSide, ownColor }: Props) {
   const elapsed = useElapsed(isFetching);
 
   if (isFetching && !report) {
@@ -86,6 +90,15 @@ export function PreviewPanel({ report, isFetching, error, onRetry }: Props) {
   }
 
   const { event, home, away } = report;
+  // Club-first order when the dashboard knows its own side; otherwise the
+  // neutral home/away layout (compare never passes ownSide).
+  const ordered =
+    ownSide === "away"
+      ? [{ side: away, own: true }, { side: home, own: false }]
+      : ownSide === "home"
+        ? [{ side: home, own: true }, { side: away, own: false }]
+        : [{ side: home, own: false }, { side: away, own: false }];
+  const clubFirst = ownSide === "home" || ownSide === "away";
 
   return (
     <div className="tl-card p-5">
@@ -103,10 +116,47 @@ export function PreviewPanel({ report, isFetching, error, onRetry }: Props) {
         </div>
       </div>
 
-      <div className="mt-3 grid gap-4 sm:grid-cols-2">
-        <LineupSide teamName={home.name} lineup={toLineup(home)} injuries={[]} emptyLabel="No predicted lineup available." />
-        <LineupSide teamName={away.name} lineup={toLineup(away)} injuries={[]} emptyLabel="No predicted lineup available." />
-      </div>
+      {clubFirst ? (
+        <div className="mt-3 space-y-4">
+          {ordered
+            .filter((o) => o.own)
+            .map(({ side }) => (
+              <div key={side.name}>
+                <p className="mb-2">
+                  <span
+                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[0.7rem] font-bold uppercase tracking-wide"
+                    style={{ background: "var(--surface-3)", color: "var(--text)" }}
+                  >
+                    Your club
+                  </span>
+                </p>
+                <div
+                  className="rounded-xl"
+                  style={ownColor ? { boxShadow: `inset 3px 0 0 ${ownColor}` } : undefined}
+                >
+                  <LineupSide teamName={side.name} lineup={toLineup(side)} injuries={[]} emptyLabel="No predicted lineup available." />
+                </div>
+              </div>
+            ))}
+          {ordered
+            .filter((o) => !o.own)
+            .map(({ side }) => (
+              <details key={side.name}>
+                <summary className="cursor-pointer select-none text-sm font-bold text-[var(--text-2)]">
+                  {side.name} — predicted XI
+                </summary>
+                <div className="mt-2 opacity-90">
+                  <LineupSide teamName={side.name} lineup={toLineup(side)} injuries={[]} emptyLabel="No predicted lineup available." />
+                </div>
+              </details>
+            ))}
+        </div>
+      ) : (
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <LineupSide teamName={home.name} lineup={toLineup(home)} injuries={[]} emptyLabel="No predicted lineup available." />
+          <LineupSide teamName={away.name} lineup={toLineup(away)} injuries={[]} emptyLabel="No predicted lineup available." />
+        </div>
+      )}
     </div>
   );
 }

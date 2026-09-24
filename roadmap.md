@@ -2,6 +2,23 @@
 
 _Last updated: 2026-09-24_
 
+## 8az. Team page critique follow-through (23/40 → fixes) ✅ DONE (2026-09-24)
+Impeccable critique `teamview-tsx` scored 23/40 (Acceptable): flat card stack,
+opponent XI equal billing, header without hero weight. Fixed all P1s + cheap
+P2s, frontend-only. **Hero:** H1 text-2xl/3xl, 60px crest, club-color wash
+(hex accents; slate fallback stays plain), Save/Saved star at 44px on the
+trailing edge with a `role=status` toast, prettified slug fallback while
+fixtures load. **Own-XI-first:** `PreviewPanel` takes `ownSide` (matched via
+the preview event id against fixtures) — own XI leads with a "Your club" tag
++ accent edge, opponent folds into a collapsed disclosure; unknown side keeps
+the neutral layout. **Distill:** news demoted to a `details` with count,
+same-day MatchList rows grouped under one header. **Clarify:** plain-language
+stats 404, xG/ratings/possession footnote in `TeamStatsPanel`, news splits
+outage (retry card) from empty. **Audit:** 44px star, visible save state,
+existing focus-visible coverage confirmed (TeamName owns its ring; summaries
+ride the global rule); `role=link`-in-button kept as the reviewed pattern.
+Frontend build green; team-stats/news probes 200.
+
 ## 8ay. Cold-start notice + keep-warm pinger docs ✅ DONE (2026-09-24)
 Free-tier Render sleeps read as broken (identical skeletons for 300ms vs
 60s). Landing skeletons now flip to a "Waking up the server…" `role=status`

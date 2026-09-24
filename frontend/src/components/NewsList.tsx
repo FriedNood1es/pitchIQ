@@ -78,6 +78,7 @@ export function NewsColumn({
   seriesColor,
   items,
   onOpenTeam,
+  showHeader = true,
 }: {
   teamName: string;
   /** Omitted = plain header (e.g. the dashboard's own club). */
@@ -85,17 +86,21 @@ export function NewsColumn({
   seriesColor: string;
   items: NewsItem[];
   onOpenTeam?: (name: string, standingsId: TeamId) => void;
+  /** False when the parent disclosure already names the club. */
+  showHeader?: boolean;
 }) {
   return (
     <div>
-      <h3 className="mb-2 flex items-center gap-2 font-semibold text-[var(--text)]">
-        <span className="h-2.5 w-2.5 rounded-full" style={{ background: seriesColor }} />
-        {onOpenTeam && teamId ? (
-          <TeamName onOpen={() => onOpenTeam(teamName, teamId)}>{teamName}</TeamName>
-        ) : (
-          teamName
-        )}
-      </h3>
+      {showHeader && (
+        <h3 className="mb-2 flex items-center gap-2 font-semibold text-[var(--text)]">
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: seriesColor }} />
+          {onOpenTeam && teamId ? (
+            <TeamName onOpen={() => onOpenTeam(teamName, teamId)}>{teamName}</TeamName>
+          ) : (
+            teamName
+          )}
+        </h3>
+      )}
       {items.length === 0 ? (
         <p className="text-sm text-[var(--muted)]">No recent news.</p>
       ) : (

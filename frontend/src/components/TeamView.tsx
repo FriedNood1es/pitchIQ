@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CountryFlag } from "./CountryFlag";
 import { MatchRow } from "./MatchRow";
 import { NewsColumn } from "./NewsList";
@@ -35,18 +35,48 @@ function MatchList({
   onSelectTeam: (team: TeamSearchResult) => void;
 }) {
   const now = useNow(1000, fixtures.some((f) => f.status === "live"));
+  // Consecutive fixtures sharing a day render under one header instead of
+  // repeating the date on every row.
+  const sections = useMemo(() => {
+    const out: { day: string; items: Fixture[] }[] = [];
+    for (const f of fixtures) {
+      const day = dayLabel(f.date);
+      const last = out[out.length - 1];
+      if (last && last.day === day) last.items.push(f);
+      else out.push({ day, items: [f] });
+    }
+    return out;
+  }, [fixtures]);
   return (
     <div className="space-y-1">
-      {fixtures.map((f) => (
-        <div key={f.eventId}>
+      {sections.map((s) => (
+        <div key={`${s.day}-${s.items[0].eventId}`}>
           <div className="px-1 pb-1 pt-2 text-xs font-medium text-[var(--muted)]">
-            {dayLabel(f.date)}
+            {s.day}
           </div>
-          <MatchRow fixture={f} now={now} onClick={() => onNavigate(f)} onSelectTeam={onSelectTeam} />
+          <div className="space-y-1">
+            {s.items.map((f) => (
+              <MatchRow
+                key={f.eventId}
+                fixture={f}
+                now={now}
+                onClick={() => onNavigate(f)}
+                onSelectTeam={onSelectTeam}
+              />
+            ))}
+          </div>
         </div>
       ))}
     </div>
   );
+}
+
+/** Routing slug -> readable name for the fixture-failure fallback ("liverpool-fc" -> "Liverpool Fc"). */
+function prettySlug(slug: string): string {
+  return slug
+    .split("-")
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
 }
 
 /**
@@ -78,6 +108,9 @@ export function TeamView({
     }
     return undefined;
   }, [fixtures, team]);
+  const displayName = teamInfo?.name ?? prettySlug(team);
+  // Stats/news resolve by display name; fall back to the raw slug only until
+  // fixtures load (the header already shows the prettified form).
   const name = teamInfo?.name ?? team;
 
   const { data: stats, isError: statsError, error: statsErrorObj, refetch: refetchStats } =
@@ -85,8 +118,19 @@ export function TeamView({
   const { data: preview, isFetching: previewFetching, error: previewError, refetch: refetchPreview } =
     usePreview(competition, team, true);
   // Same social feed as the compare report, single-team variant — an empty
-  // feed renders as "No recent news", never an error card.
-  const { data: news, isFetching: newsFetching } = useTeamNews(competition, name);
+  // feed renders as "No recent news"; a failed fetch gets its own retry card.
+  const { data: news, isFetching: newsFetching, isError: newsError, refetch: refetchNews } =
+    useTeamNews(competition, name);
+
+  // Own side of the predicted-figures matchup, matched through the preview
+  // event id — the panel leads with this club and folds the opponent away.
+  const ownSide = useMemo(() => {
+    const eid = preview?.event?.id;
+    if (eid == null) return null;
+    const match = (fixtures ?? []).find((f) => f.eventId === eid);
+    if (!match) return null;
+    return match.homeTeam.id === team ? ("home" as const) : ("away" as const);
+  }, [preview, fixtures, team]);
 
   const { recent, upcoming } = useMemo(() => {
     const matches = (fixtures ?? []).filter(
@@ -105,56 +149,85 @@ export function TeamView({
   const [, toggleFavorite, isFavorite] = useFavoriteTeams();
   const starred = isFavorite(competition, team);
 
+  // Favorite confirmations announce via the toast and clear on their own.
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
+  function handleToggleFavorite() {
+    const next = !starred;
+    toggleFavorite({
+      id: team,
+      name: displayName,
+      crestColor: teamInfo?.crestColor ?? "var(--surface-3)",
+      competition,
+      competitionName,
+      country,
+    });
+    setToast(next ? `Added ${displayName} to My teams.` : `Removed ${displayName} from My teams.`);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 2500);
+  }
+
+  // Club-color wash behind the hero — hex accents only, so the var() slate
+  // fallback keeps the plain surface instead of an invalid gradient.
+  const crest = teamInfo?.crestColor;
+  const heroStyle =
+    crest && crest.startsWith("#")
+      ? { background: `linear-gradient(135deg, ${crest}2e 0%, transparent 55%), var(--surface)` }
+      : undefined;
+
   return (
     <div className="space-y-5">
-      <div className="tl-card flex flex-wrap items-center gap-4 p-5">
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded-[10px] border px-2.5 py-1.5 text-sm font-bold text-[var(--text-2)] transition hover:text-[var(--text)]"
-          style={{ borderColor: "var(--border)" }}
-        >
-          ← Fixtures
-        </button>
-        <div className="flex items-center gap-3">
+      <div className="tl-card p-5" style={heroStyle}>
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-[10px] border px-2.5 py-1.5 text-sm font-bold text-[var(--text-2)] transition hover:text-[var(--text)]"
+            style={{ borderColor: "var(--border)" }}
+          >
+            ← Fixtures
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleFavorite}
+            aria-pressed={starred}
+            aria-label={starred ? `Remove ${displayName} from my teams` : `Add ${displayName} to my teams`}
+            title={starred ? "Remove from my teams" : "Add to my teams"}
+            className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-sm font-bold transition hover:bg-[var(--surface-2)]"
+            style={{
+              borderColor: "var(--border)",
+              color: starred ? "var(--brand)" : "var(--muted)",
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={starred ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z" />
+            </svg>
+            {starred ? "Saved" : "Save"}
+          </button>
+        </div>
+        <div className="mt-3 flex items-center gap-4">
           <TeamCrest
-            name={teamInfo?.name ?? name}
+            name={displayName}
             crestColor={teamInfo?.crestColor ?? "var(--surface-3)"}
             competition={competition}
-            size={44}
+            size={60}
           />
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-[var(--text)]">
-              {teamInfo?.name ?? name}
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-extrabold tracking-tight text-[var(--text)] sm:text-3xl">
+              {displayName}
             </h1>
-            <div className="flex items-center gap-1.5 text-sm text-[var(--muted)]">
+            <div className="mt-0.5 flex items-center gap-1.5 text-sm text-[var(--muted)]">
               <CountryFlag country={country} width={18} />
               {competitionName}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              toggleFavorite({
-                id: team,
-                name: teamInfo?.name ?? name,
-                crestColor: teamInfo?.crestColor ?? "var(--surface-3)",
-                competition,
-                competitionName,
-                country,
-              })
-            }
-            aria-pressed={starred}
-            aria-label={starred ? `Remove ${teamInfo?.name ?? name} from my teams` : `Add ${teamInfo?.name ?? name} to my teams`}
-            title={starred ? "Remove from my teams" : "Add to my teams"}
-            className="ml-auto shrink-0 rounded-lg p-2 transition hover:bg-[var(--surface-2)]"
-            style={{ color: starred ? "var(--brand)" : "var(--muted)" }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill={starred ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z" />
-            </svg>
-          </button>
         </div>
+        {toast && (
+          <p role="status" className="mt-3 text-sm font-semibold text-[var(--text)]">
+            {toast}
+          </p>
+        )}
       </div>
 
       <PreviewPanel
@@ -162,14 +235,16 @@ export function TeamView({
         isFetching={previewFetching}
         error={previewError}
         onRetry={() => refetchPreview()}
+        ownSide={ownSide}
+        ownColor={crest?.startsWith("#") ? crest : undefined}
       />
 
       {statsError &&
         ((statsErrorObj as unknown as { status?: number })?.status === 404 ? (
           <div className="tl-card p-4 text-sm text-[var(--muted)]">
-            No completed-season table entry for {teamInfo?.name ?? name} in the{" "}
-            {competitionName} — likely new to the competition this season.
-            Preview and fixtures on this page use live data.
+            No league-table stats for {displayName} in the {competitionName} yet —
+            likely new to the competition this season. Predicted lineups and
+            fixtures below use live data.
           </div>
         ) : (
           <div className="tl-card flex items-center justify-between gap-3 p-4 text-sm" style={{ color: "var(--loss)" }}>
@@ -231,8 +306,13 @@ export function TeamView({
         )}
       </div>
 
-      <div className="tl-card p-5">
-        <h2 className="tl-card-title">Latest News</h2>
+      <details className="tl-card px-5 py-4">
+        <summary className="tl-card-title cursor-pointer select-none">
+          Latest News
+          {news && news.length > 0 && (
+            <span className="font-extrabold tabular-nums"> ({news.length})</span>
+          )}
+        </summary>
         <div className="mt-3">
           {newsFetching && !news ? (
             <div className="space-y-2">
@@ -240,15 +320,27 @@ export function TeamView({
                 <div key={i} className="tl-skeleton h-4" style={{ width: `${82 - i * 9}%` }} />
               ))}
             </div>
+          ) : newsError && !news ? (
+            <div className="flex items-center justify-between gap-3 text-sm" style={{ color: "var(--loss)" }}>
+              <span>Couldn't load news.</span>
+              <button
+                className="rounded-[10px] px-3 py-1.5 text-xs font-bold"
+                style={{ background: "var(--surface-3)", color: "var(--text)" }}
+                onClick={() => refetchNews()}
+              >
+                Retry
+              </button>
+            </div>
           ) : (
             <NewsColumn
-              teamName={teamInfo?.name ?? name}
+              teamName={displayName}
               seriesColor={teamInfo?.crestColor ?? "var(--brand)"}
               items={news ?? []}
+              showHeader={false}
             />
           )}
         </div>
-      </div>
+      </details>
     </div>
   );
 }

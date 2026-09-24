@@ -72,7 +72,10 @@ export function TeamStatsPanel({ stats }: Props) {
             {stats.goalsFor}–{stats.goalsAgainst} (GF–GA)
           </span>
           {stats.expectedGoalsFor != null && stats.expectedGoalsAgainst != null && (
-            <span className="tabular-nums text-[var(--muted)]">
+            <span
+              className="tabular-nums text-[var(--muted)]"
+              title="Expected goals for/against per game"
+            >
               {stats.expectedGoalsFor.toFixed(2)}–{stats.expectedGoalsAgainst.toFixed(2)} (xG)
             </span>
           )}
@@ -88,6 +91,11 @@ export function TeamStatsPanel({ stats }: Props) {
         <RatingBar label="Defense rating" value={stats.defenseRating} />
         <RatingBar label="Possession (est.)" value={stats.possessionAvg} />
       </div>
+      <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">
+        Ratings blend expected goals (xG) with results — the xG line above shows
+        the raw numbers when available. Possession is estimated from points per
+        game, not tracked.
+      </p>
     </div>
   );
 }
