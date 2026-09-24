@@ -296,6 +296,14 @@ export function bsdRowToStats(teamId: TeamId, row: BsdStandingRow): TeamStats {
     // ~2.5 xG/game ≈ elite chance creation/suppression; constants are tunable.
     attackRating: clamp01to100((xgfPerGame / 2.5) * 100),
     defenseRating: clamp01to100((1 - xgaPerGame / 2.5) * 100),
+    // Raw per-game xG for surfaces that want numbers, not just ratings —
+    // omitted when the season has no xG (the ratings already fell back).
+    ...(hasXg
+      ? {
+          expectedGoalsFor: Math.round(xgfPerGame * 100) / 100,
+          expectedGoalsAgainst: Math.round(xgaPerGame * 100) / 100,
+        }
+      : {}),
     // BSD does not expose possession, so this is an estimate from results
     // strength (points/game), not measured possession.
     possessionAvg: clamp01to100(40 + (pointsPerGame / 3) * 25),

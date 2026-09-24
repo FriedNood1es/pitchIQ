@@ -63,6 +63,32 @@ function buildStatRows(a: TeamStats, b: TeamStats): StatRow[] {
     const leader = d > 0 ? a.name : b.name;
     return `${leader} ahead by ${Math.abs(Math.round(d))}${unit}`;
   };
+  // Raw xG rows ride along only when both seasons carry xG — otherwise the
+  // ratings above already fell back to actual goals and numbers would mislead.
+  const xgRows: StatRow[] =
+    a.expectedGoalsFor != null &&
+    b.expectedGoalsFor != null &&
+    a.expectedGoalsAgainst != null &&
+    b.expectedGoalsAgainst != null
+      ? [
+          {
+            label: "xG scored",
+            a: a.expectedGoalsFor,
+            b: b.expectedGoalsFor,
+            displayA: a.expectedGoalsFor.toFixed(2),
+            displayB: b.expectedGoalsFor.toFixed(2),
+            delta: gap(a.expectedGoalsFor, b.expectedGoalsFor),
+          },
+          {
+            label: "xG conceded",
+            a: a.expectedGoalsAgainst,
+            b: b.expectedGoalsAgainst,
+            displayA: a.expectedGoalsAgainst.toFixed(2),
+            displayB: b.expectedGoalsAgainst.toFixed(2),
+            delta: gap(a.expectedGoalsAgainst, b.expectedGoalsAgainst, "", true),
+          },
+        ]
+      : [];
   return [
     { label: "Points", a: points(a), b: points(b), delta: gap(points(a), points(b)) },
     { label: "Attack", a: a.attackRating, b: b.attackRating, delta: gap(a.attackRating, b.attackRating) },
@@ -77,6 +103,7 @@ function buildStatRows(a: TeamStats, b: TeamStats): StatRow[] {
     },
     { label: "Goals scored", a: a.goalsFor, b: b.goalsFor, delta: gap(a.goalsFor, b.goalsFor) },
     { label: "Goals conceded", a: a.goalsAgainst, b: b.goalsAgainst, delta: gap(a.goalsAgainst, b.goalsAgainst, "", true) },
+    ...xgRows,
   ];
 }
 

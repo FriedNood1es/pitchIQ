@@ -27,6 +27,9 @@ export interface TeamStats {
   attackRating: number;
   defenseRating: number;
   possessionAvg: number;
+  /** Per-game expected goals — present only when the season carries xG. */
+  expectedGoalsFor?: number;
+  expectedGoalsAgainst?: number;
 }
 
 export interface Injury {

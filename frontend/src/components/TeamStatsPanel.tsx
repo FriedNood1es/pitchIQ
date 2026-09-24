@@ -71,6 +71,11 @@ export function TeamStatsPanel({ stats }: Props) {
           <span className="tabular-nums text-[var(--muted)]">
             {stats.goalsFor}–{stats.goalsAgainst} (GF–GA)
           </span>
+          {stats.expectedGoalsFor != null && stats.expectedGoalsAgainst != null && (
+            <span className="tabular-nums text-[var(--muted)]">
+              {stats.expectedGoalsFor.toFixed(2)}–{stats.expectedGoalsAgainst.toFixed(2)} (xG)
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span className="font-semibold text-[var(--text-2)]">Form</span>

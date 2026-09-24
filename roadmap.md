@@ -814,8 +814,11 @@ Unfinished / to do:
     (already used by the team-dashboard preview) so compare shows each club's
     predicted starters with per-player `ai_score` (0-100), availability and
     formation confidence; compare currently shows the *last finished* lineup.
-  - **Raw xG numbers** — `xgf`/`xga`/`xgd` per game are folded into the 0-100
-    attack/defense ratings only (`bsdRowToStats`); expose them as numbers.
+  - [x] **Raw xG numbers** — `bsdRowToStats` now also emits per-game
+    `expectedGoalsFor/Against` (2dp, only when the season carries xG);
+    compare shows xG scored/conceded rows (both-sides-or-neither) and the
+    team dashboard prints xG beside GF–GA. Verified live: Arsenal 1.72/0.78,
+    Chelsea 1.74/1.38.
   - **Numeric prediction panel** — a deterministic home/draw/away probability +
     over/under derived from form + xG + H2H rates. The app has no numeric
     prediction output today (insight is narrative only).
