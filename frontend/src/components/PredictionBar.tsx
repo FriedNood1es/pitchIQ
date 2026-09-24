@@ -1,5 +1,5 @@
 import { formatWhen } from "../dates";
-import { Prediction } from "../types";
+import { MatchOdds, Prediction } from "../types";
 
 interface Props {
   teamA: string;
@@ -10,6 +10,8 @@ interface Props {
   /** Narrative insight shown beneath the bar; falls back to key factor alone. */
   insight?: string;
   generatedAt?: string;
+  /** Bookmaker odds for the next meeting — line hides while markets are null. */
+  odds?: MatchOdds;
 }
 
 /**
@@ -17,7 +19,7 @@ interface Props {
  * factor and narrative beneath. Team-tinted outer segments, neutral draw
  * middle — the same visual language as the hero's team colors.
  */
-export function PredictionBar({ teamA, teamB, prediction, generatedBy, insight, generatedAt }: Props) {
+export function PredictionBar({ teamA, teamB, prediction, generatedBy, insight, generatedAt, odds }: Props) {
   const { homeWin, draw, awayWin, confidence, keyFactor } = prediction;
   const label = generatedBy === "ai" ? "AI Prediction" : "Statistical Model";
   const confColor =
@@ -90,6 +92,13 @@ export function PredictionBar({ teamA, teamB, prediction, generatedBy, insight, 
       {insight && (
         <p className="mt-2 text-[0.95rem] leading-relaxed text-[var(--text)]">
           {insight}
+        </p>
+      )}
+      {odds && (
+        <p className="mt-2 text-xs tabular-nums text-[var(--muted)]">
+          Bookmaker · {teamA} {odds.teamAWin.toFixed(2)} · Draw {odds.draw.toFixed(2)} ·{" "}
+          {teamB} {odds.teamBWin.toFixed(2)} · O2.5 {odds.over25Goals.toFixed(2)} ·{" "}
+          {formatWhen(odds.eventDate)}
         </p>
       )}
       {generatedAt && (

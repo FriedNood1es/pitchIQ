@@ -826,8 +826,17 @@ Unfinished / to do:
   - **Numeric prediction panel** — a deterministic home/draw/away probability +
     over/under derived from form + xG + H2H rates. The app has no numeric
     prediction output today (insight is narrative only).
-  - **Probe BSD's `predictions`/`odds` endpoints** — see the bonus-data note
-    at the bottom; never explored, likely the highest-value prediction source.
+  - [x] **Probe BSD's `predictions`/`odds` endpoints** — probed 2026-09-24:
+    `/v2/events/{id}/odds/` is live (1X2 + O/U + BTTS, decimal) but null
+    until ~a day before kickoff; `/v2/predictions/` is rich (probs, xG,
+    most-likely score) yet covers only obscure leagues (0 hits for Arsenal /
+    Real Madrid). Wired the wireable half: `upcomingOdds` (team-A-framed 1X2
+    + O2.5 + event date) fetched for the clubs' next mutual fixture in
+    parallel with news, rendered as a Bookmaker line in `PredictionBar`,
+    hidden while markets are null (verified: absent, compare still 200 in
+    ~7s). The values-render path first lights up on a matchday — same
+    observe-in-the-wild class as the `live` literal. Predictions-list
+    coverage is a provider gap, not a code gap.
 - [x] Next: **#3 real LLM** — wired §8e (2026-08-11); just needs a key.
   No key = deterministic template; with `LLM_API_KEY` set, `insightAgent` sends
   a data brief to an OpenAI-compatible endpoint and the `AI` badge lights up.

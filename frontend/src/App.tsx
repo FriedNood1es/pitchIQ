@@ -730,6 +730,7 @@ export default function App() {
                   generatedBy={report.insightGeneratedBy}
                   insight={report.insight}
                   generatedAt={report.generatedAt}
+                  odds={report.upcomingOdds}
                 />
               </div>
             )}

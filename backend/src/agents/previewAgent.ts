@@ -3,6 +3,7 @@ import { COMPETITIONS, getCompetition } from "../data/competitions";
 import { crestColorFor, slugify } from "../data/teamDirectory";
 import { errMsg, positionGroup } from "../utils";
 import {
+  EventOdds,
   Lineup,
   PredictedLineupPlayer,
   PreviewEvent,
@@ -293,6 +294,69 @@ export async function getPredictedLineups(
     }),
   ]);
   return { ...(a ? { teamA: a } : {}), ...(b ? { teamB: b } : {}) };
+}
+
+/**
+ * Bookmaker odds for the clubs' next meeting, framed from team A. Finds the
+ * mutual notstarted fixture in the live season, then reads its odds market.
+ * Undefined when there is no upcoming meeting or BSD hasn't published
+ * markets yet (~a day out) — the UI hides the line instead of showing stale
+ * or empty odds.
+ */
+export async function getUpcomingOdds(
+  competition: string,
+  slugA: TeamId,
+  slugB: TeamId
+): Promise<EventOdds | undefined> {
+  try {
+    const comp = getCompetition(competition);
+    if (!comp) return undefined;
+    const teams = await listPreviewTeams(competition);
+    const a = resolvePreviewTeam(teams, slugA);
+    const b = resolvePreviewTeam(teams, slugB);
+    if (!a || !b) return undefined;
+
+    const liveSeason = await bsd.liveSeason(comp.bsdLeague);
+    const fixtures = await bsd.teamFixtures(
+      comp.bsdLeague,
+      liveSeason,
+      a.bsdTeamId,
+      50,
+      "notstarted"
+    );
+    const mutual = fixtures.results
+      .filter(
+        (f) =>
+          f.home_team_obj?.id === b.bsdTeamId ||
+          f.away_team_obj?.id === b.bsdTeamId
+      )
+      .sort((x, y) => x.event_date.localeCompare(y.event_date))[0];
+    if (!mutual) return undefined;
+
+    const res = await bsd.v2Odds(mutual.id);
+    const o = res.odds;
+    if (
+      o.home_win == null ||
+      o.draw == null ||
+      o.away_win == null ||
+      o.over_25_goals == null
+    ) {
+      return undefined;
+    }
+    const aHome = mutual.home_team_obj?.id === a.bsdTeamId;
+    return {
+      teamAWin: aHome ? o.home_win : o.away_win,
+      draw: o.draw,
+      teamBWin: aHome ? o.away_win : o.home_win,
+      over25Goals: o.over_25_goals,
+      eventDate: mutual.event_date,
+    };
+  } catch (err) {
+    console.warn(
+      `[previewAgent] upcoming odds unavailable for ${slugA} vs ${slugB}: ${errMsg(err)}`
+    );
+    return undefined;
+  }
 }
 
 /**

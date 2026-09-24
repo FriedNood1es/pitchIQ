@@ -155,6 +155,19 @@ export interface NewsResult {
   teamB: NewsItem[];
 }
 
+/**
+ * Bookmaker odds for the clubs' next meeting, framed from team A.
+ * Absent when there is no upcoming fixture or the markets are still null
+ * (BSD publishes them ~a day before kickoff).
+ */
+export interface EventOdds {
+  teamAWin: number;
+  draw: number;
+  teamBWin: number;
+  over25Goals: number;
+  eventDate: string;
+}
+
 export interface RadarDataset {
   label: string;
   data: number[];
@@ -185,6 +198,7 @@ export interface CompareReport {
   insightGeneratedBy: "ai" | "template";
   /** Structured probabilities — "ai" when the LLM produced them, else the deterministic model. */
   prediction: Prediction;
+  upcomingOdds?: EventOdds;
   news: NewsResult;
   visualization: VisualizationResult;
   generatedAt: string;

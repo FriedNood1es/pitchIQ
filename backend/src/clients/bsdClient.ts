@@ -185,6 +185,30 @@ export interface BsdH2hResponse {
 }
 
 /**
+ * Bookmaker odds for one event. Every market is null until ~a day out
+ * (`update_reason` says why) — callers treat all-null as absent.
+ */
+export interface BsdEventOdds {
+  home_win: number | null;
+  draw: number | null;
+  away_win: number | null;
+  over_15_goals: number | null;
+  over_25_goals: number | null;
+  over_35_goals: number | null;
+  under_15_goals: number | null;
+  under_25_goals: number | null;
+  under_35_goals: number | null;
+  btts_yes: number | null;
+  btts_no: number | null;
+}
+
+export interface BsdEventOddsResponse {
+  event_id: number;
+  odds: BsdEventOdds;
+  last_update_at: string | null;
+}
+
+/**
  * League detail. The useful field is `current_season.id`: the live campaign
  * (the pinned completed season in `data/competitions.ts` has no fixtures).
  */
@@ -316,5 +340,13 @@ export const bsd = {
   /** AI-predicted lineups for an upcoming event, with per-player confidence. */
   predictedLineup(eventId: number): Promise<BsdPredictedLineupResponse> {
     return get<BsdPredictedLineupResponse>(`/predicted-lineup/${eventId}/`);
+  },
+
+  /**
+   * Bookmaker odds for an event (1X2, over/under, BTTS). Live-probed
+   * 2026-09-24: markets are null until ~a day before kickoff.
+   */
+  v2Odds(eventId: number): Promise<BsdEventOddsResponse> {
+    return get<BsdEventOddsResponse>(`/v2/events/${eventId}/odds/`);
   },
 };

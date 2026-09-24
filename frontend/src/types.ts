@@ -103,6 +103,15 @@ export interface Prediction {
   keyFactor: string;
 }
 
+/** Bookmaker odds for the clubs' next meeting, framed from team A. */
+export interface MatchOdds {
+  teamAWin: number;
+  draw: number;
+  teamBWin: number;
+  over25Goals: number;
+  eventDate: string;
+}
+
 export interface CompareReport {
   intent: { type: "team_comparison"; competition: string; teamA: TeamId; teamB: TeamId };
   teams: {
@@ -115,6 +124,7 @@ export interface CompareReport {
   insight: string;
   insightGeneratedBy: "ai" | "template";
   prediction: Prediction;
+  upcomingOdds?: MatchOdds;
   news: { teamA: NewsItem[]; teamB: NewsItem[] };
   visualization: {
     radar: { labels: string[]; datasets: RadarDataset[] };
