@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { DataEdge, points } from "../edge";
-import { TeamStats } from "../types";
+import { TeamId, TeamStats } from "../types";
 import { FormPills } from "./FormPills";
 import { TeamCrest } from "./TeamCrest";
+import { TeamName } from "./TeamName";
 
 interface Props {
   competitionName: string;
   competition: string;
   teamA: TeamStats;
   teamB: TeamStats;
+  teamAId: TeamId;
+  teamBId: TeamId;
+  /** Open a club's dashboard from a hero name (standings-flavoured names). */
+  onOpenTeam: (name: string, standingsId: TeamId) => void;
   edge: DataEdge;
   /** Actual final score when opened from a finished fixture — shown center-hero. */
   result?: { homeScore: number; awayScore: number; date: string };
@@ -32,29 +37,34 @@ function jump(id: string) {
 
 function TeamBlock({
   team,
+  teamId,
   seriesColor,
   align,
   muted,
   competition,
+  onOpenTeam,
 }: {
   team: TeamStats;
+  teamId: TeamId;
   seriesColor: string;
   align: "start" | "end";
   /** Trailing side: name steps back, crest and numbers stay full. */
   muted: boolean;
   competition: string;
+  onOpenTeam: (name: string, standingsId: TeamId) => void;
 }) {
   const alignClass = align === "end" ? "items-end text-right" : "items-start text-left";
   return (
     <div className={`flex flex-1 flex-col gap-2 min-w-0 ${alignClass}`}>
       <div className={`flex items-center gap-2.5 ${align === "end" ? "flex-row-reverse" : ""}`}>
         <TeamCrest name={team.name} crestColor={team.crestColor} competition={competition} size={32} />
-        <span
+        <TeamName
+          onOpen={() => onOpenTeam(team.name, teamId)}
+          title={`${team.name} — open team dashboard`}
           className={`text-lg font-bold truncate ${muted ? "text-[var(--text-2)]" : "text-[var(--text)]"}`}
-          title={team.name}
         >
           {team.name}
-        </span>
+        </TeamName>
       </div>
       <div
         className={`flex items-center gap-2 text-xs text-[var(--text-2)] ${
@@ -82,7 +92,7 @@ function TeamBlock({
  * with the top reasons beneath; anchor chips stick on desktop so the long
  * evidence scroll stays reachable.
  */
-export function MatchHero({ competitionName, competition, teamA, teamB, edge, result }: Props) {
+export function MatchHero({ competitionName, competition, teamA, teamB, teamAId, teamBId, onOpenTeam, edge, result }: Props) {
   const leaderName =
     edge.leader === "A" ? teamA.name : edge.leader === "B" ? teamB.name : null;
   const v = Math.round(edge.value);
@@ -99,10 +109,12 @@ export function MatchHero({ competitionName, competition, teamA, teamB, edge, re
       <div className="flex items-start gap-3">
         <TeamBlock
           team={teamA}
+          teamId={teamAId}
           seriesColor="var(--team-a)"
           align="start"
           muted={edge.leader === "B"}
           competition={competition}
+          onOpenTeam={onOpenTeam}
         />
         {result && (
           <div
@@ -119,10 +131,12 @@ export function MatchHero({ competitionName, competition, teamA, teamB, edge, re
         )}
         <TeamBlock
           team={teamB}
+          teamId={teamBId}
           seriesColor="var(--team-b)"
           align="end"
           muted={edge.leader === "A"}
           competition={competition}
+          onOpenTeam={onOpenTeam}
         />
       </div>
       <p className="mt-3 text-center text-base font-extrabold text-[var(--text)]">

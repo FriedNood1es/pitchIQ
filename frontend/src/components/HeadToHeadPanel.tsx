@@ -1,11 +1,15 @@
 import { HeadToHeadMatch, TeamId } from "../types";
 import { formatDateShort as formatDate } from "../dates";
+import { TeamName } from "./TeamName";
 
 interface Props {
   headToHead: HeadToHeadMatch[];
   teamA: TeamId;
+  teamB: TeamId;
   teamAName: string;
   teamBName: string;
+  /** Open a club's dashboard from a meeting row (names carry no slug). */
+  onOpenTeam: (name: string, standingsId: TeamId) => void;
 }
 
 /**
@@ -14,7 +18,7 @@ interface Props {
  * validation agent flags the gap and the UI states it plainly rather than
  * inventing fixtures.
  */
-export function HeadToHeadPanel({ headToHead, teamA, teamAName, teamBName }: Props) {
+export function HeadToHeadPanel({ headToHead, teamA, teamB, teamAName, teamBName, onOpenTeam }: Props) {
   if (headToHead.length === 0) {
     return (
       <div className="tl-card h-full p-5">
@@ -36,19 +40,31 @@ export function HeadToHeadPanel({ headToHead, teamA, teamAName, teamBName }: Pro
           // tally — bold whichever side won to make it obvious at a glance.
           const leftWon = m.homeGoals > m.awayGoals;
           const rightWon = m.awayGoals > m.homeGoals;
+          const left = aHome
+            ? { name: teamAName, id: teamA }
+            : { name: teamBName, id: teamB };
+          const right = aHome
+            ? { name: teamBName, id: teamB }
+            : { name: teamAName, id: teamA };
 
           return (
             <li key={i} className="flex items-baseline gap-2 py-2 text-sm">
               <span className="min-w-0 flex-1 truncate font-medium text-[var(--text-2)]">
-                <span style={{ fontWeight: leftWon ? 700 : 400, color: leftWon ? "var(--text)" : undefined }}>
-                  {aHome ? teamAName : teamBName}
-                </span>
+                <TeamName
+                  onOpen={() => onOpenTeam(left.name, left.id)}
+                  className={leftWon ? "font-bold text-[var(--text)]" : ""}
+                >
+                  {left.name}
+                </TeamName>
                 <span className="mx-1.5 font-bold tabular-nums text-[var(--text)]">
                   {m.homeGoals}–{m.awayGoals}
                 </span>
-                <span style={{ fontWeight: rightWon ? 700 : 400, color: rightWon ? "var(--text)" : undefined }}>
-                  {aHome ? teamBName : teamAName}
-                </span>
+                <TeamName
+                  onOpen={() => onOpenTeam(right.name, right.id)}
+                  className={rightWon ? "font-bold text-[var(--text)]" : ""}
+                >
+                  {right.name}
+                </TeamName>
               </span>
               <span className="shrink-0 whitespace-nowrap text-xs text-[var(--muted)]">
                 {formatDate(m.date)}

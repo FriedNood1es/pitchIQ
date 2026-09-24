@@ -1,6 +1,7 @@
-import { Fixture } from "../types";
+import { Fixture, FixtureTeam, TeamSearchResult } from "../types";
 import { formatCountdown, useCountdown } from "../hooks/useCountdown";
 import { TeamCrest } from "./TeamCrest";
+import { TeamName } from "./TeamName";
 
 export function kickoff(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, {
@@ -48,24 +49,36 @@ function LiveCell({ date, now }: { date: string; now: number }) {
   );
 }
 
-/** One team line: monogram + name, with a right-aligned score once played/live. */
+/**
+ * One team line: monogram + name, with a right-aligned score once played/live.
+ * The name opens the club's dashboard (its preview slug rides on the fixture
+ * team, so no standings lookup is needed); the row itself still compares.
+ */
 function TeamLine({
   name,
   crestColor,
   competition,
   score,
+  disabled,
+  onOpenTeam,
 }: {
   name: string;
   crestColor: string;
   competition: string;
   score?: number;
+  disabled?: boolean;
+  onOpenTeam: () => void;
 }) {
   return (
     <span className="flex min-w-0 items-center gap-2">
       <TeamCrest name={name} crestColor={crestColor} competition={competition} size={20} />
-      <span className="truncate text-sm font-semibold text-[var(--text)]">
+      <TeamName
+        onOpen={onOpenTeam}
+        disabled={disabled}
+        className="truncate text-sm font-semibold text-[var(--text)]"
+      >
         {name}
-      </span>
+      </TeamName>
       {score !== undefined && (
         <span className="ml-auto pl-3 font-bold tabular-nums text-[var(--text)]">
           {score}
@@ -82,16 +95,31 @@ function TeamLine({
 export function MatchRow({
   fixture,
   onClick,
+  onSelectTeam,
   pending,
   now,
 }: {
   fixture: Fixture;
   onClick: () => void;
+  /** Open a club's dashboard — the result is built from the fixture itself. */
+  onSelectTeam: (team: TeamSearchResult) => void;
   /** True while the click is resolving standings slugs — blocks double-taps. */
   pending?: boolean;
   /** Shared list clock (epoch ms) for the live elapsed cell. */
   now: number;
 }) {
+  // Dashboard identity comes straight off the fixture: preview slug + the
+  // competition meta the TeamSearchResult needs all ride along already.
+  function openTeam(side: FixtureTeam) {
+    onSelectTeam({
+      id: side.id,
+      name: side.name,
+      crestColor: side.crestColor,
+      competition: fixture.competition,
+      competitionName: fixture.competitionName,
+      country: fixture.country,
+    });
+  }
   // Finished rows are NOT dimmed: opacity reads as disabled. The FT label
   // + per-line scores in the time column already separate them.
   const scored = fixture.status === "finished" || fixture.status === "live";
@@ -126,12 +154,16 @@ export function MatchRow({
           crestColor={fixture.homeTeam.crestColor}
           competition={fixture.competition}
           score={scored ? fixture.homeScore ?? 0 : undefined}
+          disabled={pending}
+          onOpenTeam={() => openTeam(fixture.homeTeam)}
         />
         <TeamLine
           name={fixture.awayTeam.name}
           crestColor={fixture.awayTeam.crestColor}
           competition={fixture.competition}
           score={scored ? fixture.awayScore ?? 0 : undefined}
+          disabled={pending}
+          onOpenTeam={() => openTeam(fixture.awayTeam)}
         />
       </span>
       <span

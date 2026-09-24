@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { CountryFlag } from "./CountryFlag";
 import { MatchRow } from "./MatchRow";
+import { NewsColumn } from "./NewsList";
 import { PreviewPanel } from "./PreviewPanel";
 import { formatDay as dayLabel } from "../dates";
 import { TeamCrest } from "./TeamCrest";
@@ -8,9 +9,10 @@ import { TeamStatsPanel } from "./TeamStatsPanel";
 import { useFavoriteTeams } from "../hooks/useFavoriteTeams";
 import { useFixtures } from "../hooks/useFixtures";
 import { usePreview } from "../hooks/usePreview";
+import { useTeamNews } from "../hooks/useTeamNews";
 import { useTeamStats } from "../hooks/useTeamStats";
 import { useNow } from "../hooks/useCountdown";
-import { Fixture, TeamId } from "../types";
+import { Fixture, TeamId, TeamSearchResult } from "../types";
 
 interface Props {
   competition: string;
@@ -20,9 +22,18 @@ interface Props {
   country: string;
   onBack: () => void;
   onNavigate: (fixture: Fixture) => void;
+  onSelectTeam: (team: TeamSearchResult) => void;
 }
 
-function MatchList({ fixtures, onNavigate }: { fixtures: Fixture[]; onNavigate: (f: Fixture) => void }) {
+function MatchList({
+  fixtures,
+  onNavigate,
+  onSelectTeam,
+}: {
+  fixtures: Fixture[];
+  onNavigate: (f: Fixture) => void;
+  onSelectTeam: (team: TeamSearchResult) => void;
+}) {
   const now = useNow(1000, fixtures.some((f) => f.status === "live"));
   return (
     <div className="space-y-1">
@@ -31,7 +42,7 @@ function MatchList({ fixtures, onNavigate }: { fixtures: Fixture[]; onNavigate: 
           <div className="px-1 pb-1 pt-2 text-xs font-medium text-[var(--muted)]">
             {dayLabel(f.date)}
           </div>
-          <MatchRow fixture={f} now={now} onClick={() => onNavigate(f)} />
+          <MatchRow fixture={f} now={now} onClick={() => onNavigate(f)} onSelectTeam={onSelectTeam} />
         </div>
       ))}
     </div>
@@ -50,6 +61,7 @@ export function TeamView({
   country,
   onBack,
   onNavigate,
+  onSelectTeam,
 }: Props) {
   const {
     data: fixtures,
@@ -72,6 +84,9 @@ export function TeamView({
     useTeamStats(competition, name);
   const { data: preview, isFetching: previewFetching, error: previewError, refetch: refetchPreview } =
     usePreview(competition, team, true);
+  // Same social feed as the compare report, single-team variant — an empty
+  // feed renders as "No recent news", never an error card.
+  const { data: news, isFetching: newsFetching } = useTeamNews(competition, name);
 
   const { recent, upcoming } = useMemo(() => {
     const matches = (fixtures ?? []).filter(
@@ -200,7 +215,7 @@ export function TeamView({
               Recent
             </h3>
             <div className="mt-1.5">
-              <MatchList fixtures={recent} onNavigate={onNavigate} />
+              <MatchList fixtures={recent} onNavigate={onNavigate} onSelectTeam={onSelectTeam} />
             </div>
           </div>
         )}
@@ -210,10 +225,29 @@ export function TeamView({
               Upcoming
             </h3>
             <div className="mt-1.5">
-              <MatchList fixtures={upcoming} onNavigate={onNavigate} />
+              <MatchList fixtures={upcoming} onNavigate={onNavigate} onSelectTeam={onSelectTeam} />
             </div>
           </div>
         )}
+      </div>
+
+      <div className="tl-card p-5">
+        <h2 className="tl-card-title">Latest News</h2>
+        <div className="mt-3">
+          {newsFetching && !news ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }, (_, i) => (
+                <div key={i} className="tl-skeleton h-4" style={{ width: `${82 - i * 9}%` }} />
+              ))}
+            </div>
+          ) : (
+            <NewsColumn
+              teamName={teamInfo?.name ?? name}
+              seriesColor={teamInfo?.crestColor ?? "var(--brand)"}
+              items={news ?? []}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

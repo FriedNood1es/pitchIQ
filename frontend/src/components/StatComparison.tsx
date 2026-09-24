@@ -1,3 +1,6 @@
+import { TeamId } from "../types";
+import { TeamName } from "./TeamName";
+
 export interface StatRow {
   label: string;
   a: number;
@@ -13,6 +16,10 @@ interface Props {
   rows: StatRow[];
   teamAName: string;
   teamBName: string;
+  teamAId: TeamId;
+  teamBId: TeamId;
+  /** Open a club's dashboard from a legend name. */
+  onOpenTeam: (name: string, standingsId: TeamId) => void;
 }
 
 function Row({ row }: { row: StatRow }) {
@@ -68,7 +75,7 @@ function Row({ row }: { row: StatRow }) {
   );
 }
 
-export function StatComparison({ rows, teamAName, teamBName }: Props) {
+export function StatComparison({ rows, teamAName, teamBName, teamAId, teamBId, onOpenTeam }: Props) {
   return (
     <div className="tl-card overflow-x-auto p-5">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -76,11 +83,23 @@ export function StatComparison({ rows, teamAName, teamBName }: Props) {
         <div className="flex items-center gap-3 text-xs font-semibold text-[var(--text-2)]">
           <span className="inline-flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full" style={{ background: "var(--team-a)" }} />
-            <span className="max-w-32 truncate sm:max-w-40" title={teamAName}>{teamAName}</span>
+            <TeamName
+              onOpen={() => onOpenTeam(teamAName, teamAId)}
+              title={`${teamAName} — open team dashboard`}
+              className="max-w-32 truncate sm:max-w-40"
+            >
+              {teamAName}
+            </TeamName>
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full" style={{ background: "var(--team-b)" }} />
-            <span className="max-w-32 truncate sm:max-w-40" title={teamBName}>{teamBName}</span>
+            <TeamName
+              onOpen={() => onOpenTeam(teamBName, teamBId)}
+              title={`${teamBName} — open team dashboard`}
+              className="max-w-32 truncate sm:max-w-40"
+            >
+              {teamBName}
+            </TeamName>
           </span>
         </div>
       </div>

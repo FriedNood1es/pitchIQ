@@ -1,10 +1,15 @@
 import { useState } from "react";
-import { NewsItem } from "../types";
+import { NewsItem, TeamId } from "../types";
 import { formatWhen } from "../dates";
+import { TeamName } from "./TeamName";
 
 interface Props {
   teamAName: string;
   teamBName: string;
+  teamAId: TeamId;
+  teamBId: TeamId;
+  /** Open a club's dashboard from a column header. */
+  onOpenTeam: (name: string, standingsId: TeamId) => void;
   teamANews: NewsItem[];
   teamBNews: NewsItem[];
 }
@@ -66,20 +71,30 @@ function NewsEntry({ item }: { item: NewsItem }) {
   );
 }
 
-function NewsColumn({
+/** One club's feed — exported for the team dashboard's single-team section. */
+export function NewsColumn({
   teamName,
+  teamId,
   seriesColor,
   items,
+  onOpenTeam,
 }: {
   teamName: string;
+  /** Omitted = plain header (e.g. the dashboard's own club). */
+  teamId?: TeamId;
   seriesColor: string;
   items: NewsItem[];
+  onOpenTeam?: (name: string, standingsId: TeamId) => void;
 }) {
   return (
     <div>
       <h3 className="mb-2 flex items-center gap-2 font-semibold text-[var(--text)]">
         <span className="h-2.5 w-2.5 rounded-full" style={{ background: seriesColor }} />
-        {teamName}
+        {onOpenTeam && teamId ? (
+          <TeamName onOpen={() => onOpenTeam(teamName, teamId)}>{teamName}</TeamName>
+        ) : (
+          teamName
+        )}
       </h3>
       {items.length === 0 ? (
         <p className="text-sm text-[var(--muted)]">No recent news.</p>
@@ -101,7 +116,7 @@ function isFresh(publishedAt: string): boolean {
   return !Number.isNaN(t) && Date.now() - t < FRESH_MS;
 }
 
-export function NewsList({ teamAName, teamBName, teamANews, teamBNews }: Props) {
+export function NewsList({ teamAName, teamBName, teamAId, teamBId, onOpenTeam, teamANews, teamBNews }: Props) {
   const hasFresh = [...teamANews, ...teamBNews].some((i) => isFresh(i.publishedAt));
   // User toggle takes over from the fresh-default on first interaction (also
   // stops a manually-closed feed snapping back open on the next render).
@@ -148,8 +163,8 @@ export function NewsList({ teamAName, teamBName, teamANews, teamBNews }: Props) 
         )}
       </summary>
       <div className="mt-3 grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <NewsColumn teamName={teamAName} seriesColor="var(--team-a)" items={teamANews} />
-        <NewsColumn teamName={teamBName} seriesColor="var(--team-b)" items={teamBNews} />
+        <NewsColumn teamName={teamAName} teamId={teamAId} seriesColor="var(--team-a)" items={teamANews} onOpenTeam={onOpenTeam} />
+        <NewsColumn teamName={teamBName} teamId={teamBId} seriesColor="var(--team-b)" items={teamBNews} onOpenTeam={onOpenTeam} />
       </div>
     </details>
   );

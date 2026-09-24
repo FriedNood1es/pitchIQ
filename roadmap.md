@@ -1,6 +1,53 @@
 # PitchIQ — Roadmap
 
-_Last updated: 2026-09-20_
+_Last updated: 2026-09-24_
+
+## 8ay. Cold-start notice + keep-warm pinger docs ✅ DONE (2026-09-24)
+Free-tier Render sleeps read as broken (identical skeletons for 300ms vs
+60s). Landing skeletons now flip to a "Waking up the server…" `role=status`
+note after 4s of `isFetching && !fixtures` (fast loads never see it;
+compare deep-links deliberately excluded per scope). README Deploy documents
+the free UptimeRobot `/health` ping (5–10 min, fits the 750h/mo quota) with
+Starter as the durable fix.
+
+## 8ax. Clickable team names → team dashboard (BSD-backed) ✅ DONE (2026-09-24)
+Every team name opens that club's dashboard (`#/team/<competition>/<slug>`,
+existing BSD-driven `TeamView`: fixtures-resolved identity, `useTeamStats`
+with honest 404 card, `usePreview` lineups). No new endpoints, no new data
+plumbing — the dashboard already resolves what BSD gives and degrades plainly.
+Entry points today: header search, sidebar favorites, compare-fallback,
+direct URL. Dead surfaces: `MatchRow` TeamLine, `StandingsTable` rows,
+`HeadToHeadPanel` rows (+ hero/legend/lineup/news headers, phase 2).
+Primitives exist: `handleSelectTeam` (`App.tsx:432-444`, needs
+`{competition, competitionName, country, id, name, crestColor}`) and
+`resolveTeam` (`App.tsx:45-58`, standings→preview slug bridge, same gap
+`handleNavigate` already crosses).
+Phase 1 (core): MatchRow lines (preview slug is free on `FixtureTeam` —
+`<span role="link">` + stopPropagation + keyboard, row stays a button so no
+nested `<button>`; thread `onSelectTeam` beside `onNavigate` through
+`FixturesView→DateSection` and `TeamView→MatchList`), StandingsTable rows
+(real `<button>` in `<td>`, `resolveTeam` vs App's preview list, fallback to
+dashboard + notice when unresolvable), H2H rows (names-only, same resolution;
+thread preview list + `onSelectTeam` through the compare section). Phase 2
+(optional): hero/legend/lineup/news headers; TeamView news section via the
+existing per-team social feed. Verify: frontend build + click each Phase-1
+surface → correct dashboard, unresolvable → notice, never a dead end.
+Shipped Phase 1 (2026-09-24): new `TeamName.tsx` (`role=link` span +
+`matchPreviewTeam`/`normalizeTeamName`, App's local normalizer removed);
+MatchRow names build the dashboard result off the fixture (preview slug is
+free); StandingsTable rows are buttons resolving via focused-mode
+`usePreviewTeams`; H2H names resolve via compare-mode `usePreviewTeams`;
+unresolvable → dashboard + `fallbackNotice` (new optional `handleSelectTeam`
+param). Phase 2 deferred. Frontend build green.
+Shipped Phase 2 (2026-09-24): hero names (`MatchHero` TeamBlocks), stats
+legend, lineup side headers and news column headers all open dashboards via
+the renamed `handleOpenCompareTeam` (same preview-slug resolution + notice
+fallback); `TeamName` gained an overridable `title` for truncated names.
+TeamView grew a Latest News section on new `GET /api/team-news`
+(`newsAgent.getTeamNews` reusing the social feed + shared `teamAgent`
+`resolveStandingsRow` tiers, always 200 with `[]` on miss) via `useTeamNews`
+and the exported `NewsColumn`. Live probe: Arsenal 6 items, unknown club
+`[]`. Both builds green.
 
 ## 8aw. Impeccable re-audit fixes II (17/20 → P1/P2) ✅ DONE (2026-09-20)
 Harden: skip-to-content link (off-screen until focused, reduced-motion-safe)
@@ -160,8 +207,8 @@ call, flipped order 1 call with swapped probs, new competition/injuries miss).
   v3 key (see §§8aj–8aq).
 - [ ] **Dark logo variant.** ESPN serves `500-dark/` artwork per team; prefer
   it under the dark theme (needs theme-aware picking in `TeamCrest`).
-- [ ] **Decide on strays.** `frontend/src/icons/` (unreferenced SVG) and
-  `.impeccable/` (critique reports) are untracked — track, wire, or delete.
+- [ ] **Decide on strays.** `.impeccable/` (critique reports) is untracked —
+  track or delete. (`frontend/src/icons/` is already gone.)
 - [ ] **Prediction-data phase.** Still the app's real goal — H2H aggregates,
   predicted-XI-in-compare, raw xG surfacing, numeric probabilities, BSD
   `predictions`/`odds` probes (see §7-era notes deeper in this file).
@@ -737,15 +784,14 @@ Unfinished / to do:
   sources (live fixtures vs standings). Both tabs are gone, but fixtures still
   carry preview-style slugs and compare needs standings slugs — worth aligning
   (`teamDirectory.ts` aliases) if the name-matching above ever bites.
-- [ ] **Crest-colour map only covers PL clubs** (`data/teamDirectory.ts`
-  `CREST_COLORS`); La Liga/Serie A/etc. fall back to slate grey. Since §8g
-  removed real crests, the monogram **is** the team identity now — extending
-  the map to the other 10 competitions' clubs is the only lever for colour
-  fidelity (decorative, never an error).
-- [ ] **Insight copy degrades badly with no H2H.** With the curated H2H empty for
-  most pairings, the mock insight emits "Over the last 0 meetings, Arsenal have
-  won 0 and Aston Villa have won 0." Suppress the H2H clause when there are no
-  meetings (worth fixing whether or not the LLM stays mocked).
+- [ ] **Crest-colour map gaps** (`data/teamDirectory.ts` `CREST_COLORS`
+  covers ~35 clubs across Big-5 + Eredivisie + Liga Portugal + Old Firm);
+  uncovered clubs (Championship, cross-border cups, remaining Dutch/
+  Portuguese sides) fall back to slate grey. Badges are back via the ESPN
+  proxy (§8ad), so this is monogram-underlay polish only — decorative, never
+  an error.
+- [x] **Insight copy degrades badly with no H2H.** Fixed §8e (H2H clause
+  suppressed when empty) and §8at (mock mode deleted — template/LLM only).
 - [ ] **Future competition additions (Wave 2+).** §7 shipped Europa League,
   Conference League, Eredivisie, Liga Portugal and Championship. All remaining
   BSD leagues were probed and every candidate has a completed 25/26 (or 2025)

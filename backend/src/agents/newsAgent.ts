@@ -2,6 +2,7 @@ import { bsd, BsdSocialItem } from "../clients/bsdClient";
 import { getCompetition } from "../data/competitions";
 import { slugify } from "../data/teamDirectory";
 import { Intent, NewsItem, NewsResult, TeamId } from "../types";
+import { resolveStandingsRow } from "./teamAgent";
 
 /**
  * News comes from the BSD team `social` feed — a mix of press coverage and the
@@ -14,6 +15,31 @@ const MAX_ITEMS_PER_TEAM = 6;
 
 export async function runNewsAgent(intent: Intent): Promise<NewsResult> {
   return (await retrieveBsdNews(intent)) ?? { teamA: [], teamB: [] };
+}
+
+/**
+ * Social-feed news for one team (team dashboard). Same source and filters as
+ * the compare path, resolved by display name through the shared standings
+ * tiers. Any failure degrades to [] — news is supporting colour, and the UI
+ * already renders an empty feed as "No recent news."
+ */
+export async function getTeamNews(competition: string, name: string): Promise<NewsItem[]> {
+  const comp = getCompetition(competition);
+  if (!comp) throw new Error(`Unknown competition "${competition}"`);
+
+  try {
+    const table = await bsd.standings(comp.bsdLeague, comp.bsdSeason);
+    const row = resolveStandingsRow(table.standings, name);
+    if (!row) return [];
+    const team = await bsd.team(row.team_id);
+    return toNewsItems(slugify(row.team), team.social);
+  } catch (err) {
+    console.warn(
+      "[newsAgent] BSD social feed unavailable, returning empty news:",
+      err instanceof Error ? err.message : err
+    );
+    return [];
+  }
 }
 
 /** Returns null when the feed can't be resolved, signalling empty lists. */

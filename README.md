@@ -58,7 +58,11 @@ The frontend is a static Vite bundle on Vercel (build
 the Render URL). Secrets (`BSD_KEY`, `LLM_API_KEY`, explicit `LLM_MODEL`)
 live in the hosting dashboards only — never committed. Render's free tier
 sleeps on idle; the first hit after sleep is slow (cold data fetch), which is
-expected.
+expected — the landing shows a "Waking up the server…" note when the first
+load exceeds ~4s. To reduce sleeps for free, add an UptimeRobot monitor
+pinging `https://<service>.onrender.com/health` every 5–10 min (one
+always-warm service just fits the 750h/mo free quota); the durable fix is
+Render Starter, which also keeps the 24h insight cache warm.
 
 ## Data & design notes
 

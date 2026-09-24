@@ -3,15 +3,18 @@ import { fetchStandings } from "../api/client";
 import { formatDay as dayLabel, toInputDate, fromInputDate } from "../dates";
 import { points as pts } from "../edge";
 import { useNow } from "../hooks/useCountdown";
+import { usePreviewTeams } from "../hooks/usePreview";
 import { CountryFlag } from "./CountryFlag";
 import { LeagueSidebar } from "./LeagueSidebar";
 import { MatchRow } from "./MatchRow";
 import { TeamCrest } from "./TeamCrest";
+import { matchPreviewTeam } from "./TeamName";
 import { usePinnedLeagues } from "../hooks/usePinnedLeagues";
 import {
   Competition,
   Fixture,
   FixturesStatus,
+  PreviewTeamSummary,
   TeamSearchResult,
   TeamStats,
 } from "../types";
@@ -29,7 +32,8 @@ interface Props {
   competition: string;
   onCompetitionChange: (competition: string) => void;
   onNavigate: (fixture: Fixture) => void;
-  onSelectTeam: (team: TeamSearchResult) => void;
+  /** Optional notice rides along when the club has no dashboard entry. */
+  onSelectTeam: (team: TeamSearchResult, notice?: string) => void;
   /** Event id of the row currently resolving standings slugs (pending feedback). */
   pendingEventId?: number | null;
 }
@@ -119,12 +123,14 @@ function DateSection({
   label,
   fixtures,
   onNavigate,
+  onSelectTeam,
   pendingEventId,
   anchor,
 }: {
   label: string;
   fixtures: Fixture[];
   onNavigate: (f: Fixture) => void;
+  onSelectTeam: (team: TeamSearchResult) => void;
   pendingEventId?: number | null;
   /** Scroll target id for the date stepper (undefined = not steppable). */
   anchor?: string;
@@ -145,6 +151,7 @@ function DateSection({
             now={now}
             pending={pendingEventId === f.eventId}
             onClick={() => onNavigate(f)}
+            onSelectTeam={onSelectTeam}
           />
         ))}
       </div>
@@ -152,13 +159,57 @@ function DateSection({
   );
 }
 
-/** Pinned-season table for a league band: pos, record, goals, points. */
-function StandingsTable({ rows, competition }: { rows: TeamStats[]; competition: string }) {
+/**
+ * Pinned-season table for a league band: pos, record, goals, points. Team
+ * names open the club's dashboard — standings slugs resolve to preview slugs
+ * against the preview list (unresolvable clubs still open the dashboard with
+ * a notice, never a dead end).
+ */
+function StandingsTable({
+  rows,
+  competition,
+  competitionName,
+  country,
+  previewTeams,
+  onSelectTeam,
+}: {
+  rows: TeamStats[];
+  competition: string;
+  competitionName: string;
+  country: string;
+  previewTeams: PreviewTeamSummary[] | undefined;
+  onSelectTeam: (team: TeamSearchResult, notice?: string) => void;
+}) {
   if (rows.length === 0) {
     return (
       <p className="px-1 py-3 text-center text-sm text-[var(--muted)]">
         No standings for this competition yet.
       </p>
+    );
+  }
+  function openStanding(t: TeamStats) {
+    const entry = matchPreviewTeam(previewTeams, t.name);
+    if (entry) {
+      onSelectTeam({
+        id: entry.id,
+        name: entry.name,
+        crestColor: entry.crestColor,
+        competition,
+        competitionName,
+        country,
+      });
+      return;
+    }
+    onSelectTeam(
+      {
+        id: t.teamId,
+        name: t.name,
+        crestColor: t.crestColor,
+        competition,
+        competitionName,
+        country,
+      },
+      `No dashboard data for ${t.name} yet — showing what we have.`
     );
   }
   return (
@@ -183,10 +234,15 @@ function StandingsTable({ rows, competition }: { rows: TeamStats[]; competition:
                   {t.standingPosition}
                 </td>
                 <td className="max-w-44 px-2 py-1.5">
-                  <span className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openStanding(t)}
+                    title={`Open ${t.name} dashboard`}
+                    className="flex w-full items-center gap-2 rounded transition hover:text-[var(--brand)] focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
+                  >
                     <TeamCrest name={t.name} crestColor={t.crestColor} competition={competition} size={18} />
-                    <span className="truncate font-semibold text-[var(--text)]">{t.name}</span>
-                  </span>
+                    <span className="truncate font-semibold hover:underline">{t.name}</span>
+                  </button>
                 </td>
                 <td className="px-1.5 py-1.5 text-center tabular-nums text-[var(--text-2)]">{t.played}</td>
                 <td className="px-1.5 py-1.5 text-center tabular-nums text-[var(--text-2)]">{t.wins}</td>
@@ -533,6 +589,24 @@ export function FixturesView({
     window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
   }
 
+  // Cold-start notice: Render's free tier sleeps on idle, so the first
+  // fetch after sleep hangs ~30-60s on identical skeletons. Flip to an
+  // honest "waking up" note after 4s — fast loads never see it.
+  const coldLoading = isFetching && !fixtures && !isError;
+  const [slowLoad, setSlowLoad] = useState(false);
+  useEffect(() => {
+    if (!coldLoading) {
+      setSlowLoad(false);
+      return;
+    }
+    const t = setTimeout(() => setSlowLoad(true), 4000);
+    return () => clearTimeout(t);
+  }, [coldLoading]);
+
+  // Preview list for standings-name → dashboard-slug resolution (focused
+  // mode only — the hook stays disabled on the all-leagues overview).
+  const { data: previewTeams } = usePreviewTeams(competition);
+
   // Standings tables, fetched once per competition when its focused band
   // is open (including on first render — bands start expanded, so there is
   // no open-transition to hook the fetch onto). A band showing the section
@@ -789,6 +863,12 @@ export function FixturesView({
           {Array.from({ length: 6 }, (_, i) => (
             <div key={i} className="tl-skeleton h-9" style={{ width: `${92 - i * 8}%` }} />
           ))}
+          {slowLoad && (
+            <p role="status" className="pt-1 text-sm text-[var(--muted)]">
+              Waking up the server — the free tier sleeps when idle, so the
+              first load can take ~60s. Hang tight, no need to retry.
+            </p>
+          )}
         </div>
       )}
 
@@ -840,6 +920,7 @@ export function FixturesView({
                         label={dayLabel(d.fixtures[0].date)}
                         fixtures={d.fixtures}
                         onNavigate={onNavigate}
+                        onSelectTeam={onSelectTeam}
                         pendingEventId={pendingEventId}
                         anchor={
                           competition && dayIndex.get(d.date) !== undefined
@@ -869,7 +950,14 @@ export function FixturesView({
                         <span className="tl-card-title block px-1">Standings</span>
                         <div className="mt-1.5">
                           {tables[league.key] ? (
-                            <StandingsTable rows={tables[league.key]} competition={league.key} />
+                            <StandingsTable
+                              rows={tables[league.key]}
+                              competition={league.key}
+                              competitionName={league.name}
+                              country={league.country}
+                              previewTeams={previewTeams}
+                              onSelectTeam={onSelectTeam}
+                            />
                           ) : tableErrors[league.key] ? (
                             <p className="px-1 py-3 text-center text-sm" style={{ color: "var(--loss)" }}>
                               Couldn't load the table: {tableErrors[league.key]}

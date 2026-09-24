@@ -13,18 +13,23 @@ lineups — to guide a match prediction.
   `npm run build -w backend` (`tsc -p tsconfig.json`) and `npm run build -w frontend` (`tsc -b && vite build`).
   Run both after changes.
 - For live-data end-to-end checks: `backend/scripts/verify.ps1` starts the built
-  backend hidden, probes preview-teams/preview/compare with timings, then kills the
+  backend hidden on `:4100` (not `:4000`, so it never clashes with dev),
+  probes preview-teams/preview/compare with timings, then kills the
   server (no orphaned processes). Requires `npm run build -w backend` first.
   Also probes search (cold+warm), team-stats, and fixtures; supports `-SkipCompare`.
 - Backend needs `backend/.env` with `BSD_KEY`;
-  `.env` is gitignored, `.env.example` documents every variable.
-- Deploy (§8ar): backend → Render via `render.yaml` blueprint (long-running
+  `.env` is gitignored, `.env.example` documents every variable. Env loads via
+  Node 20 `process.loadEnvFile()` in `config.ts` — there is no `dotenv` dep, don't add one.
+- Deploy (§8ar, §8ay): backend → Render via `render.yaml` blueprint (long-running
   Node keeps the BSD/insight/crest caches + boot warmup; free tier sleeps on
   idle, Starter keeps the 24h insight cache warm). Frontend → Vercel static:
   build `npm run build -w frontend`, output `frontend/dist`, env
   `VITE_API_URL` → Render URL (empty = same-origin `/api` for local dev;
   exported `apiBase` in `api/client.ts`, reused by `crests.ts`). Secrets
   (`BSD_KEY`, rotated `LLM_API_KEY`, explicit `LLM_MODEL`) live in dashboards only.
+  Cold starts read as broken, so the landing skeletons flip to a "Waking up the
+  server…" `role=status` note after 4s of first-load fetching (fast loads never
+  see it); free keep-warm is an UptimeRobot monitor pinging `/health` every 5–10 min.
 
 ## Architecture
 
@@ -34,6 +39,11 @@ lineups — to guide a match prediction.
   `backend/src/agents/`. Flow: `routes/compare.ts` → `orchestrator/compareOrchestrator.ts`
   → dataRetrieval → dataValidation → insight → news → visualization (intent +
   report are inline in the orchestrator — single-caller wrappers were removed).
+  `routes/compare.ts` also hosts `GET /competitions`, `/teams`, `/crests` and
+  `/standings` (no separate route files); `routes/team.ts` hosts `GET /team-stats`
+  and `/team-news` (single-team social feed, always 200 with `[]` on miss);
+  other routers are one endpoint each (`fixtures.ts`, `preview.ts`, `search.ts`).
+  `backend/src/mocks/` is an empty leftover — mock mode is gone, do not restore it.
 - **BSD is the sole data provider** (there is no second provider anymore — the
   API-Football fallback and crest system were removed). BSD has no rate limit
   and current-season + xG data. Seasons are pinned per competition to a completed
@@ -48,7 +58,8 @@ lineups — to guide a match prediction.
 - Frontend is a single-view dashboard (no tabs): a **Fixtures** landing view
   (all/live/finished/scheduled across the 11 competitions, `routes/fixtures.ts`)
   where clicking any match row opens the **Compare** report for the two clubs
-  (`FixturesView.tsx`, `MatchRow`, `#/fixtures` and `#/compare` hash routes).
+  (`FixturesView.tsx`, `MatchRow`, `#/fixtures`, `#/compare` and
+  `#/team/<competition>/<slug>` hash routes).
   The old Compare/Preview tab switcher and the Preview UI were removed.
   **Scheduled rows tick down to kickoff** (`hooks/useCountdown.ts`: seconds
   within the hour, else once a minute) and **live matches** — fetched as a
@@ -66,9 +77,9 @@ lineups — to guide a match prediction.
   so differ from compare's standings slugs (`liverpool`).
 - **Team dashboard** (`#/team/<competition>/<slug>`): a header `TeamSearchBox`
   hits `GET /api/search?q=` (`agents/searchAgent.ts`), which builds a global
-  index from each league's `listPreviewTeams` (identity-only — no crest
-  resolution needed since BSD has none). The index is warmed at boot, so the
-  first query is ~15ms (was ~2.5s cold). A hit opens `TeamView` (Preview +
+   index from each league's `listPreviewTeams` (identity-only — no crest
+   resolution needed since BSD has none). The index is warmed at boot, so the
+   first query is ~15ms. A hit opens `TeamView` (Preview +
   Stats + Matches). Stats come
   from `GET /api/team-stats?competition=&name=` (`agents/teamAgent.ts`),
   reusing `dataRetrievalAgent`'s exported `bsdRowToStats` against the pinned
@@ -122,9 +133,8 @@ lineups — to guide a match prediction.
   (`buildDataBrief` — position, xG-derived ratings, goals/game, form, injuries,
   H2H); without a key it falls back to the deterministic
   `buildTemplatedInsight`. `insightGeneratedBy` distinguishes "ai" from
-  "template". No key is committed. The default `llama-3.3-70b-versatile` was
-  retired; set `LLM_MODEL=openai/gpt-oss-20b` (or another live model) in
-  `.env` for Groq.
+  "template". No key is committed. Set `LLM_MODEL=openai/gpt-oss-20b`
+  (or another live model) in `.env` for Groq.
 - **Structured prediction** (§8ah). One LLM call returns prose + probabilities:
   the prompt demands JSON `{summary, homeWin, draw, awayWin, confidence,
   keyFactor}` (sums to 100; fenced/preambled output is salvaged by brace
@@ -145,7 +155,7 @@ lineups — to guide a match prediction.
   changes). Currently 11 competitions (Big-5 + UCL + Europa + Conference + Eredivisie
   + Liga Portugal + Championship). Refreshing a season: `GET /seasons/?league=<bsdLeague>`,
   match on the season *name* (BSD's numeric `year` is unreliable).
-- Crests: `CREST_COLORS` in `teamDirectory.ts` covers ~70+ clubs across Big-5
+- Crests: `CREST_COLORS` in `teamDirectory.ts` covers ~35 clubs across Big-5
   + Eredivisie + Liga Portugal. Light-clad or unmapped clubs fall back to slate —
   decorative, never an error.
 - Frontend proxies `/api` → `http://localhost:4000` via `vite.config.ts`.

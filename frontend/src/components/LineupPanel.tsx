@@ -1,8 +1,13 @@
-import { Injury, Lineup } from "../types";
+import { Injury, Lineup, TeamId } from "../types";
+import { TeamName } from "./TeamName";
 
 interface Props {
   teamAName: string;
   teamBName: string;
+  teamAId: TeamId;
+  teamBId: TeamId;
+  /** Open a club's dashboard from a side header. */
+  onOpenTeam: (name: string, standingsId: TeamId) => void;
   teamALineup?: Lineup;
   teamBLineup?: Lineup;
   teamAInjuries: Injury[];
@@ -22,14 +27,19 @@ function PositionChip({ position }: { position: string }) {
 
 export function LineupSide({
   teamName,
+  teamId,
   lineup,
   injuries,
   emptyLabel,
+  onOpenTeam,
 }: {
   teamName: string;
+  teamId?: TeamId;
   lineup?: Lineup;
   injuries: Injury[];
   emptyLabel: string;
+  /** Omitted = plain header (e.g. no dashboard context). */
+  onOpenTeam?: (name: string, standingsId: TeamId) => void;
 }) {
   const groups = ["GK", "DEF", "MID", "FWD"] as const;
   const playersByGroup = (group: string) =>
@@ -38,7 +48,16 @@ export function LineupSide({
   return (
     <div className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-bold text-[var(--text)]">{teamName}</p>
+        {onOpenTeam && teamId ? (
+          <TeamName
+            onOpen={() => onOpenTeam(teamName, teamId)}
+            className="text-sm font-bold text-[var(--text)]"
+          >
+            {teamName}
+          </TeamName>
+        ) : (
+          <p className="text-sm font-bold text-[var(--text)]">{teamName}</p>
+        )}
         {lineup && (
           <p className="shrink-0 text-xs tabular-nums text-[var(--muted)]">
             {lineup.formation}
@@ -156,6 +175,9 @@ export function LineupSide({
 export function LineupPanel({
   teamAName,
   teamBName,
+  teamAId,
+  teamBId,
+  onOpenTeam,
   teamALineup,
   teamBLineup,
   teamAInjuries,
@@ -185,15 +207,19 @@ export function LineupPanel({
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         <LineupSide
           teamName={teamAName}
+          teamId={teamAId}
           lineup={teamALineup}
           injuries={teamAInjuries}
           emptyLabel="No lineup data for the last fixture."
+          onOpenTeam={onOpenTeam}
         />
         <LineupSide
           teamName={teamBName}
+          teamId={teamBId}
           lineup={teamBLineup}
           injuries={teamBInjuries}
           emptyLabel="No lineup data for the last fixture."
+          onOpenTeam={onOpenTeam}
         />
       </div>
     </details>

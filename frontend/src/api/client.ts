@@ -3,6 +3,7 @@ import {
   Competition,
   Fixture,
   FixturesStatus,
+  NewsItem,
   PreviewReport,
   PreviewTeamSummary,
   TeamId,
@@ -72,6 +73,13 @@ export function fetchSearch(q: string): Promise<TeamSearchResult[]> {
 export function fetchTeamStats(competition: string, name: string): Promise<TeamStats> {
   return getJson<TeamStats>(
     `/api/team-stats?competition=${encodeURIComponent(competition)}&name=${encodeURIComponent(name)}`
+  );
+}
+
+/** Social-feed news for one team (team dashboard) — [] when none on record. */
+export function fetchTeamNews(competition: string, name: string): Promise<NewsItem[]> {
+  return getJson<NewsItem[]>(
+    `/api/team-news?competition=${encodeURIComponent(competition)}&name=${encodeURIComponent(name)}`
   );
 }
 

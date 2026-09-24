@@ -12,9 +12,11 @@ import { ReportSkeleton } from "./components/Skeletons";
 import { StatComparison, StatRow } from "./components/StatComparison";
 import { TeamSearchBox } from "./components/TeamSearchBox";
 import { TeamView } from "./components/TeamView";
+import { matchPreviewTeam, normalizeTeamName } from "./components/TeamName";
 import { useCompareTeams } from "./hooks/useCompareTeams";
 import { useCompetitions } from "./hooks/useCompetitions";
 import { useFixtures } from "./hooks/useFixtures";
+import { usePreviewTeams } from "./hooks/usePreview";
 import { useTeams } from "./hooks/useTeams";
 import { useTheme } from "./hooks/useTheme";
 import { parseHash, writeHash, ViewMode } from "./hash";
@@ -23,16 +25,6 @@ import { Fixture, FixturesStatus, TeamId, TeamSearchResult, TeamStats } from "./
 // chart.js rides in its own chunk — the radar is a below-fold card, so the
 // initial bundle stays lean until a comparison actually renders it.
 const RadarChart = lazy(() => import("./components/RadarChart"));
-
-/** Lowercase, strip diacritics (Málaga -> Malaga), keep [a-z0-9]. */
-function normalizeName(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "")
-    .trim();
-}
 
 /**
  * Resolve a fixture-side club name to a standings slug. Fixture names come
@@ -48,13 +40,13 @@ function resolveTeam(
 ): TeamId | undefined {
   const exact = teams.find((t) => t.name === name);
   if (exact) return exact.id;
-  const norm = normalizeName(name);
-  const normalized = teams.find((t) => normalizeName(t.name) === norm);
+  const norm = normalizeTeamName(name);
+  const normalized = teams.find((t) => normalizeTeamName(t.name) === norm);
   if (normalized) return normalized.id;
   // One-directional, like the backend's teamAgent: a standings name containing
   // the fixture name ("Feyenoord Rotterdam" > "Feyenoord"). Never the reverse,
   // which could match "Wolverhampton" to an unrelated "Wolverhampton Casuals".
-  return teams.find((t) => normalizeName(t.name).includes(norm))?.id;
+  return teams.find((t) => normalizeTeamName(t.name).includes(norm))?.id;
 }
 
 function buildStatRows(a: TeamStats, b: TeamStats): StatRow[] {
@@ -428,11 +420,15 @@ export default function App() {
     });
   }
 
-  /** Search result -> the team's dashboard (Preview / Stats / Matches). */
-  function handleSelectTeam(result: TeamSearchResult) {
+  /**
+   * Search result -> the team's dashboard (Preview / Stats / Matches). An
+   * optional notice covers clubs that resolve to a bare dashboard (no
+   * preview-list entry) instead of failing silently.
+   */
+  function handleSelectTeam(result: TeamSearchResult, notice?: string) {
     setHasCompared(false);
     setMatchContext(null);
-    setFallbackNotice(null);
+    setFallbackNotice(notice ?? null);
     setPendingEventId(null);
     setTeamA("");
     setTeamB("");
@@ -441,6 +437,29 @@ export default function App() {
     setTeamSelection({ competition: result.competition, team: result.id });
     setMode("team");
     writeHash({ mode: "team", competition: result.competition, team: result.id });
+  }
+
+  // Preview list for the compare section: H2H rows carry bare display names,
+  // so they resolve to dashboard slugs here (loaded only in compare mode).
+  const { data: comparePreviewTeams } = usePreviewTeams(mode === "compare" ? competition : "");
+
+  /** Report name -> dashboard (preview slug when resolvable, else standings slug + notice). */
+  function handleOpenCompareTeam(displayName: string, standingsId: TeamId) {
+    const meta = competitions?.find((c) => c.id === competition);
+    const base = {
+      competition,
+      competitionName: meta?.name ?? "",
+      country: meta?.country ?? "",
+    };
+    const entry = matchPreviewTeam(comparePreviewTeams, displayName);
+    if (entry) {
+      handleSelectTeam({ ...base, id: entry.id, name: entry.name, crestColor: entry.crestColor });
+      return;
+    }
+    handleSelectTeam(
+      { ...base, id: standingsId, name: displayName, crestColor: "var(--surface-3)" },
+      `No dashboard data for ${displayName} yet — showing what we have.`
+    );
   }
 
   function handleBackToFixtures() {
@@ -596,6 +615,7 @@ export default function App() {
             }
             onBack={handleBackToFixtures}
             onNavigate={handleNavigate}
+            onSelectTeam={handleSelectTeam}
           />
           </>
           </ErrorBoundary>
@@ -666,6 +686,9 @@ export default function App() {
                 competition={report.intent.competition}
                 teamA={report.teams.teamA.stats}
                 teamB={report.teams.teamB.stats}
+                teamAId={report.intent.teamA}
+                teamBId={report.intent.teamB}
+                onOpenTeam={handleOpenCompareTeam}
                 edge={computeEdge(report)}
                 result={finishedResult}
               />
@@ -688,12 +711,18 @@ export default function App() {
                 rows={buildStatRows(report.teams.teamA.stats, report.teams.teamB.stats)}
                 teamAName={report.teams.teamA.stats.name}
                 teamBName={report.teams.teamB.stats.name}
+                teamAId={report.intent.teamA}
+                teamBId={report.intent.teamB}
+                onOpenTeam={handleOpenCompareTeam}
               />
             </div>
             <div id="compare-lineups" className="scroll-mt-24">
               <LineupPanel
                 teamAName={report.teams.teamA.stats.name}
                 teamBName={report.teams.teamB.stats.name}
+                teamAId={report.intent.teamA}
+                teamBId={report.intent.teamB}
+                onOpenTeam={handleOpenCompareTeam}
                 teamALineup={report.teams.teamA.lineup}
                 teamBLineup={report.teams.teamB.lineup}
                 teamAInjuries={report.teams.teamA.injuries}
@@ -708,8 +737,10 @@ export default function App() {
                 <HeadToHeadPanel
                   headToHead={report.headToHead}
                   teamA={report.intent.teamA}
+                  teamB={report.intent.teamB}
                   teamAName={report.teams.teamA.stats.name}
                   teamBName={report.teams.teamB.stats.name}
+                  onOpenTeam={handleOpenCompareTeam}
                 />
               </div>
               <div id="compare-chart" className="scroll-mt-24">
@@ -731,6 +762,9 @@ export default function App() {
               <NewsList
                 teamAName={report.teams.teamA.stats.name}
                 teamBName={report.teams.teamB.stats.name}
+                teamAId={report.intent.teamA}
+                teamBId={report.intent.teamB}
+                onOpenTeam={handleOpenCompareTeam}
                 teamANews={report.news.teamA}
                 teamBNews={report.news.teamB}
               />
