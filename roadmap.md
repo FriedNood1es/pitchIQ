@@ -18,6 +18,12 @@ outage (retry card) from empty. **Audit:** 44px star, visible save state,
 existing focus-visible coverage confirmed (TeamName owns its ring; summaries
 ride the global rule); `role=link`-in-button kept as the reviewed pattern.
 Frontend build green; team-stats/news probes 200.
+Follow-up 2026-09-24: split-button rows — `MatchRow` is now a plain container
+with three native buttons (two dashboard name buttons + a labeled compare
+button, 44px target, spinner preserved). The `role=link` + stopPropagation
+nesting is gone from rows (`TeamName` stays for the non-button surfaces:
+H2H rows, hero/legend/lineup/news headers). Name taps stay live while a
+compare resolves (the dashboard nav already cancels the pending state).
 
 ## 8ay. Cold-start notice + keep-warm pinger docs ✅ DONE (2026-09-24)
 Free-tier Render sleeps read as broken (identical skeletons for 300ms vs

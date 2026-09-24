@@ -1,7 +1,6 @@
 import { Fixture, FixtureTeam, TeamSearchResult } from "../types";
 import { formatCountdown, useCountdown } from "../hooks/useCountdown";
 import { TeamCrest } from "./TeamCrest";
-import { TeamName } from "./TeamName";
 
 export function kickoff(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, {
@@ -51,34 +50,35 @@ function LiveCell({ date, now }: { date: string; now: number }) {
 
 /**
  * One team line: monogram + name, with a right-aligned score once played/live.
- * The name opens the club's dashboard (its preview slug rides on the fixture
- * team, so no standings lookup is needed); the row itself still compares.
+ * The name is its own button opening the club's dashboard (its preview slug
+ * rides on the fixture team, so no standings lookup is needed) — independent
+ * of the row's compare action, so no stopPropagation hacks.
  */
 function TeamLine({
   name,
   crestColor,
   competition,
   score,
-  disabled,
   onOpenTeam,
 }: {
   name: string;
   crestColor: string;
   competition: string;
   score?: number;
-  disabled?: boolean;
   onOpenTeam: () => void;
 }) {
   return (
     <span className="flex min-w-0 items-center gap-2">
       <TeamCrest name={name} crestColor={crestColor} competition={competition} size={20} />
-      <TeamName
-        onOpen={onOpenTeam}
-        disabled={disabled}
-        className="truncate text-sm font-semibold text-[var(--text)]"
+      <button
+        type="button"
+        onClick={onOpenTeam}
+        title={`Open ${name} dashboard`}
+        aria-label={`Open ${name} dashboard`}
+        className="truncate rounded text-sm font-semibold text-[var(--text)] transition hover:text-[var(--brand)] hover:underline focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
       >
         {name}
-      </TeamName>
+      </button>
       {score !== undefined && (
         <span className="ml-auto pl-3 font-bold tabular-nums text-[var(--text)]">
           {score}
@@ -89,8 +89,11 @@ function TeamLine({
 }
 
 /**
- * One fixture row: time column, home-over-away lines, chevron — shared
- * between the fixtures landing and the team dashboard.
+ * One fixture row: time column, home-over-away lines, compare button —
+ * shared between the fixtures landing and the team dashboard. The row is a
+ * plain container: each team name is a real button (dashboard) and the
+ * trailing action is a real button (compare), so assistive tech meets three
+ * native controls instead of a link nested in a button.
  */
 export function MatchRow({
   fixture,
@@ -123,21 +126,10 @@ export function MatchRow({
   // Finished rows are NOT dimmed: opacity reads as disabled. The FT label
   // + per-line scores in the time column already separate them.
   const scored = fixture.status === "finished" || fixture.status === "live";
+  const compareLabel = `Compare ${fixture.homeTeam.name} vs ${fixture.awayTeam.name} — stats, head-to-head and prediction`;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={pending}
-      aria-busy={pending ? "true" : undefined}
-      title={
-        pending
-          ? "Loading comparison…"
-          : "Compare these clubs — stats, head-to-head and prediction. Tap to open."
-      }
-      className={`group grid min-h-[48px] w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left transition hover:border-[var(--border)] hover:bg-[var(--surface-2)] focus-visible:border-[var(--brand)] ${
-        pending ? "cursor-wait opacity-60" : ""
-      }`}
-    >
+    <div className="grid min-h-[48px] w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left transition hover:border-[var(--border)] hover:bg-[var(--surface-2)]">
+
       <span className="flex w-[3.5rem] flex-col items-start justify-center gap-0.5 text-sm">
         {fixture.status === "finished" && (
           <>
@@ -154,7 +146,6 @@ export function MatchRow({
           crestColor={fixture.homeTeam.crestColor}
           competition={fixture.competition}
           score={scored ? fixture.homeScore ?? 0 : undefined}
-          disabled={pending}
           onOpenTeam={() => openTeam(fixture.homeTeam)}
         />
         <TeamLine
@@ -162,22 +153,26 @@ export function MatchRow({
           crestColor={fixture.awayTeam.crestColor}
           competition={fixture.competition}
           score={scored ? fixture.awayScore ?? 0 : undefined}
-          disabled={pending}
           onOpenTeam={() => openTeam(fixture.awayTeam)}
         />
       </span>
-      <span
-        aria-hidden="true"
-        className="shrink-0 text-xs font-bold text-[var(--muted)] transition group-hover:text-[var(--brand)] group-focus-visible:text-[var(--brand)]"
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={pending}
+        aria-busy={pending ? "true" : undefined}
+        aria-label={compareLabel}
+        title={pending ? "Loading comparison…" : compareLabel}
+        className="flex min-h-[44px] shrink-0 items-center rounded-lg px-1 text-xs font-bold text-[var(--muted)] transition hover:text-[var(--brand)]"
       >
         {pending ? (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="animate-spin">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" aria-hidden="true" className="animate-spin">
             <path d="M21 12a9 9 0 1 1-6.2-8.56" />
           </svg>
         ) : (
-          <>Compare&nbsp;›</>
+          <span aria-hidden="true">Compare&nbsp;›</span>
         )}
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
