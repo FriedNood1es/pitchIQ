@@ -196,25 +196,34 @@ it for a day). `useCompareTeams` gained a 10-min `staleTime` to skip
 in-session refetch. Verified: both builds green + node harness (same pair 1
 call, flipped order 1 call with swapped probs, new competition/injuries miss).
 
-## OPEN — unfinished business
-- [ ] **Crest eyeball on an unblocked network.** Pipeline is verified to the
-  data source; badges vs monograms (and wrong-badge scan) still need eyes —
-  tether 5 min to warm caches, or check after deploy.
+## OPEN — unfinished business (needs a human, not an agent)
+- [ ] **Crest eyeball on an unblocked network** (~5 min, tether or post-deploy).
+  This machine's DNS blocks ESPN, so verify elsewhere: (1) all 11 league
+  bands show badges where coverage is expected, monograms elsewhere, no
+  wrong-badge rows; (2) `HEAD https://a.espncdn.com/i/teamlogos/soccer/500-dark/357.png`
+  (Leeds) — 200 confirms the dark-variant pattern, 404 means revert
+  `TeamCrest` to default-only; (3) next-matchday check: Bookmaker odds line
+  and predicted-XI values render with real numbers (both hide correctly today).
 - [ ] **Rotate the Groq key.** It lived in chat history, shell history, and
-  `.env` logs — rotate in the Groq console, update `backend/.env`.
+  `.env` logs — Groq console → rotate → paste into `backend/.env`
+  (`LLM_API_KEY`) **and** the Render dashboard env → redeploy.
 - [x] **Commit the pile.** Committed: insight cache, finished-result view,
   projected-score removal, H2H/radar grid, news snippets + thumbnails, crest
-  v3 key (see §§8aj–8aq).
+  v3 key (see §§8aj–8aq). Second pile committed 2026-09-24: §§8ay–8ax +
+  prediction-data phase, one commit per fix.
 - [x] **Dark logo variant.** `TeamCrest` layers a `500-dark/` badge over the
   default, toggled by pure CSS on `[data-theme]` (no per-row theme
   subscription); either failure falls back down the chain to the monogram,
   so a wrong CDN pattern degrades to today's rendering. Pattern + eyeball
-  fold into the crest-eyeball check below.
-- [ ] **Decide on strays.** `.impeccable/` (critique reports) is untracked —
-  track or delete. (`frontend/src/icons/` is already gone.)
-- [ ] **Prediction-data phase.** Still the app's real goal — H2H aggregates,
-  predicted-XI-in-compare, raw xG surfacing, numeric probabilities, BSD
-  `predictions`/`odds` probes (see §7-era notes deeper in this file).
+  fold into the crest-eyeball check above.
+- [x] **Decide on strays.** Deleted `.impeccable/` (5 superseded Sep-17
+  critiques, already acted on in §§8av–8aw). (`frontend/src/icons/` was
+  already gone.)
+- [x] **Prediction-data phase.** Shipped 2026-09-24 in four commits: H2H
+  aggregates, raw xG, predicted-XI-in-compare, bookmaker odds line
+  (numeric probabilities already existed via §8ah). Provider gaps recorded
+  inline: predictions-list covers only obscure leagues; odds/predicted-XI
+  are null until ~a day before kickoff.
 
 ## 8ab. Groq live for match insight ✅ DONE (2026-09-17)
 `LLM_API_KEY` set (gitignored `.env`, to be rotated — lived in chat);

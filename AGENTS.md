@@ -39,6 +39,8 @@ lineups — to guide a match prediction.
   `backend/src/agents/`. Flow: `routes/compare.ts` → `orchestrator/compareOrchestrator.ts`
   → dataRetrieval → dataValidation → insight → news → visualization (intent +
   report are inline in the orchestrator — single-caller wrappers were removed).
+  Predicted XIs + bookmaker odds (`previewAgent.getPredictedLineups` /
+  `getUpcomingOdds`) ride in parallel with news, off the insight critical path.
   `routes/compare.ts` also hosts `GET /competitions`, `/teams`, `/crests` and
   `/standings` (no separate route files); `routes/team.ts` hosts `GET /team-stats`
   and `/team-news` (single-team social feed, always 200 with `[]` on miss);
@@ -80,7 +82,7 @@ lineups — to guide a match prediction.
    index from each league's `listPreviewTeams` (identity-only — no crest
    resolution needed since BSD has none). The index is warmed at boot, so the
    first query is ~15ms. A hit opens `TeamView` (Preview +
-  Stats + Matches). Stats come
+  Stats + Matches + Latest News). Stats come
   from `GET /api/team-stats?competition=&name=` (`agents/teamAgent.ts`),
   reusing `dataRetrievalAgent`'s exported `bsdRowToStats` against the pinned
   completed season; names match exact → slugified → substring because live
