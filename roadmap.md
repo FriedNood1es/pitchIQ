@@ -205,8 +205,11 @@ call, flipped order 1 call with swapped probs, new competition/injuries miss).
 - [x] **Commit the pile.** Committed: insight cache, finished-result view,
   projected-score removal, H2H/radar grid, news snippets + thumbnails, crest
   v3 key (see §§8aj–8aq).
-- [ ] **Dark logo variant.** ESPN serves `500-dark/` artwork per team; prefer
-  it under the dark theme (needs theme-aware picking in `TeamCrest`).
+- [x] **Dark logo variant.** `TeamCrest` layers a `500-dark/` badge over the
+  default, toggled by pure CSS on `[data-theme]` (no per-row theme
+  subscription); either failure falls back down the chain to the monogram,
+  so a wrong CDN pattern degrades to today's rendering. Pattern + eyeball
+  fold into the crest-eyeball check below.
 - [ ] **Decide on strays.** `.impeccable/` (critique reports) is untracked —
   track or delete. (`frontend/src/icons/` is already gone.)
 - [ ] **Prediction-data phase.** Still the app's real goal — H2H aggregates,

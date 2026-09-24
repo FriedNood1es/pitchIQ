@@ -187,6 +187,21 @@ body {
   border-top: 1px solid var(--border);
 }
 
+/* Dark-variant club badge: layered over the default badge, shown only under
+   the dark theme (pure CSS — no theme subscription per row). A failed dark
+   load hides itself, revealing the default badge underneath. */
+.crest-dark {
+  display: none;
+}
+:root[data-theme="dark"] .crest-dark {
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .crest-dark {
+    display: block;
+  }
+}
+
 /* Accessible focus ring for every interactive control */
 button:focus-visible,
 a:focus-visible,

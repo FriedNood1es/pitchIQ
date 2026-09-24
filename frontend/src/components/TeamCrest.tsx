@@ -47,6 +47,19 @@ export function TeamCrest({ name, crestColor, size = 22, competition }: Props) {
   // Single shared-store lookup — no per-row fetch or list merge.
   const url = useCrestUrl(competition, name);
   const [failed, setFailed] = useState(false);
+  const [darkFailed, setDarkFailed] = useState(false);
+  // ESPN's dark-variant artwork lives beside the default on the CDN. Derived
+  // at render (no snapshot regen); a wrong pattern just fails back to the
+  // default badge, never a broken frame.
+  const darkUrl =
+    url && !failed && url.includes("/teamlogos/soccer/500/")
+      ? url.replace("/teamlogos/soccer/500/", "/teamlogos/soccer/500-dark/")
+      : undefined;
+  const imgStyle = {
+    background: crestColor,
+    objectFit: "contain",
+    padding: "8%",
+  } as const;
   return (
     <span
       aria-hidden="true"
@@ -68,7 +81,17 @@ export function TeamCrest({ name, crestColor, size = 22, competition }: Props) {
           loading="lazy"
           onError={() => setFailed(true)}
           className="absolute inset-0 h-full w-full"
-          style={{ background: crestColor, objectFit: "contain", padding: "8%" }}
+          style={imgStyle}
+        />
+      )}
+      {darkUrl && !darkFailed && (
+        <img
+          src={darkUrl}
+          alt=""
+          loading="lazy"
+          onError={() => setDarkFailed(true)}
+          className="crest-dark absolute inset-0 h-full w-full"
+          style={imgStyle}
         />
       )}
     </span>
