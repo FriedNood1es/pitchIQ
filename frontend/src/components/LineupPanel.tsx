@@ -170,7 +170,9 @@ export function LineupSide({
 /**
  * Latest confirmed/predicted XIs for both teams plus each side's unavailable
  * players. The backend derives these from the teams' most recent finished
- * fixture, so they trail the actual kickoff lineups by a matchday.
+ * fixture, so they trail the actual kickoff lineups by a matchday. Predicted
+ * next XIs come from the preview model off each club's next scheduled
+ * fixture and render in their own block when present.
  */
 export function LineupPanel({
   teamAName,
@@ -182,11 +184,14 @@ export function LineupPanel({
   teamBLineup,
   teamAInjuries,
   teamBInjuries,
-}: Props) {
+  predictedA,
+  predictedB,
+}: Props & { predictedA?: Lineup; predictedB?: Lineup }) {
   const hasAny =
     teamALineup != null || teamBLineup != null || teamAInjuries.length > 0 || teamBInjuries.length > 0;
+  const hasPredicted = predictedA != null || predictedB != null;
 
-  if (!hasAny) {
+  if (!hasAny && !hasPredicted) {
     return (
       <details className="tl-card px-5 py-4" open>
         <summary className="tl-card-title cursor-pointer select-none">Team News &amp; Lineups</summary>
@@ -204,24 +209,51 @@ export function LineupPanel({
         AI scores (0–100) rate how sure the model is about each starter —
         higher means surer. © marks the captain.
       </p>
-      <div className="mt-3 grid gap-4 sm:grid-cols-2">
-        <LineupSide
-          teamName={teamAName}
-          teamId={teamAId}
-          lineup={teamALineup}
-          injuries={teamAInjuries}
-          emptyLabel="No lineup data for the last fixture."
-          onOpenTeam={onOpenTeam}
-        />
-        <LineupSide
-          teamName={teamBName}
-          teamId={teamBId}
-          lineup={teamBLineup}
-          injuries={teamBInjuries}
-          emptyLabel="No lineup data for the last fixture."
-          onOpenTeam={onOpenTeam}
-        />
-      </div>
+      {hasAny && (
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <LineupSide
+            teamName={teamAName}
+            teamId={teamAId}
+            lineup={teamALineup}
+            injuries={teamAInjuries}
+            emptyLabel="No lineup data for the last fixture."
+            onOpenTeam={onOpenTeam}
+          />
+          <LineupSide
+            teamName={teamBName}
+            teamId={teamBId}
+            lineup={teamBLineup}
+            injuries={teamBInjuries}
+            emptyLabel="No lineup data for the last fixture."
+            onOpenTeam={onOpenTeam}
+          />
+        </div>
+      )}
+      {hasPredicted && (
+        <div className="mt-4">
+          <p className="text-xs text-[var(--muted)]">
+            Predicted next XIs — from each club's next scheduled fixture.
+          </p>
+          <div className="mt-2 grid gap-4 sm:grid-cols-2">
+            <LineupSide
+              teamName={teamAName}
+              teamId={teamAId}
+              lineup={predictedA}
+              injuries={[]}
+              emptyLabel="No predicted lineup — no upcoming fixture."
+              onOpenTeam={onOpenTeam}
+            />
+            <LineupSide
+              teamName={teamBName}
+              teamId={teamBId}
+              lineup={predictedB}
+              injuries={[]}
+              emptyLabel="No predicted lineup — no upcoming fixture."
+              onOpenTeam={onOpenTeam}
+            />
+          </div>
+        </div>
+      )}
     </details>
   );
 }

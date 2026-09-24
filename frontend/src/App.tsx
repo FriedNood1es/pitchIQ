@@ -750,6 +750,8 @@ export default function App() {
                 teamAId={report.intent.teamA}
                 teamBId={report.intent.teamB}
                 onOpenTeam={handleOpenCompareTeam}
+                predictedA={report.teams.teamA.predictedLineup}
+                predictedB={report.teams.teamB.predictedLineup}
                 teamALineup={report.teams.teamA.lineup}
                 teamBLineup={report.teams.teamB.lineup}
                 teamAInjuries={report.teams.teamA.injuries}

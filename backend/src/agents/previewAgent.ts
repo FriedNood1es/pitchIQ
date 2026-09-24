@@ -1,8 +1,9 @@
 import { bsd, BsdPredictedStarter } from "../clients/bsdClient";
 import { COMPETITIONS, getCompetition } from "../data/competitions";
 import { crestColorFor, slugify } from "../data/teamDirectory";
-import { positionGroup } from "../utils";
+import { errMsg, positionGroup } from "../utils";
 import {
+  Lineup,
   PredictedLineupPlayer,
   PreviewEvent,
   PreviewReport,
@@ -207,6 +208,91 @@ function emptyPreview(
     message,
     generatedAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Standings slug -> preview team (the two slug schemes differ: compare uses
+ * standings names, preview uses live-fixture names). Tiers mirror the
+ * standings matcher, one-directional — the preview slug carries the extra
+ * affix ("liverpool-fc" vs "liverpool"), never the reverse.
+ */
+function resolvePreviewTeam(teams: PreviewTeam[], slug: TeamId): PreviewTeam | undefined {
+  return (
+    teams.find((t) => t.id === slug) ??
+    teams.find((t) => slugify(t.name) === slug) ??
+    teams.find((t) => slugify(t.name).includes(slug))
+  );
+}
+
+/**
+ * Predicted next XI for one club, mapped to the shared Lineup shape so the
+ * compare report reuses the same rendering as confirmed lineups. Undefined
+ * when the club has no upcoming fixture or the model has nothing — the
+ * section hides instead of erroring.
+ */
+async function predictedLineupFor(
+  competition: string,
+  standingsSlug: TeamId
+): Promise<Lineup | undefined> {
+  const comp = getCompetition(competition);
+  if (!comp) return undefined;
+  const teams = await listPreviewTeams(competition);
+  const team = resolvePreviewTeam(teams, standingsSlug);
+  if (!team) return undefined;
+
+  const liveSeason = await bsd.liveSeason(comp.bsdLeague);
+  const fixtures = await bsd.teamFixtures(
+    comp.bsdLeague,
+    liveSeason,
+    team.bsdTeamId,
+    20,
+    "notstarted"
+  );
+  const next = fixtures.results.sort((a, b) =>
+    a.event_date.localeCompare(b.event_date)
+  )[0];
+  if (!next) return undefined;
+
+  const predicted = await bsd.predictedLineup(next.id);
+  const ours =
+    slugify(next.home_team) === slugify(team.name)
+      ? predicted.lineups.home
+      : predicted.lineups.away;
+  const side = mapSide(ours);
+  return {
+    formation: side.formation,
+    confidence: side.confidence,
+    confirmed: false,
+    startingXI: side.starters.map((p) => ({
+      name: p.name,
+      position: p.position,
+      jerseyNumber: p.jerseyNumber,
+      aiScore: p.aiScore,
+    })),
+    substitutes: [],
+  };
+}
+
+/**
+ * Predicted next XIs for both compare clubs. Each side degrades to undefined
+ * independently; runs in parallel with the news agent in the orchestrator.
+ */
+export async function getPredictedLineups(
+  competition: string,
+  teamA: TeamId,
+  teamB: TeamId
+): Promise<{ teamA?: Lineup; teamB?: Lineup }> {
+  const [a, b] = await Promise.all([
+    predictedLineupFor(competition, teamA).catch((err) => {
+      console.warn(`[previewAgent] predicted XI unavailable for ${teamA}: ${errMsg(err)}`);
+      return undefined;
+    }),
+    predictedLineupFor(competition, teamB).catch((err) => {
+      console.warn(`[previewAgent] predicted XI unavailable for ${teamB}: ${errMsg(err)}`);
+      return undefined;
+    }),
+  ]);
+  return { ...(a ? { teamA: a } : {}), ...(b ? { teamB: b } : {}) };
 }
 
 /**

@@ -106,8 +106,8 @@ export interface Prediction {
 export interface CompareReport {
   intent: { type: "team_comparison"; competition: string; teamA: TeamId; teamB: TeamId };
   teams: {
-    teamA: { stats: TeamStats; injuries: Injury[]; lineup?: Lineup };
-    teamB: { stats: TeamStats; injuries: Injury[]; lineup?: Lineup };
+    teamA: { stats: TeamStats; injuries: Injury[]; lineup?: Lineup; predictedLineup?: Lineup };
+    teamB: { stats: TeamStats; injuries: Injury[]; lineup?: Lineup; predictedLineup?: Lineup };
   };
   headToHead: HeadToHeadMatch[];
   headToHeadAggregates?: H2hAggregates;

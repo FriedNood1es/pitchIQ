@@ -810,10 +810,14 @@ Unfinished / to do:
     unverified) as `headToHeadAggregates`, threaded to the report; the panel
     shows "N meetings · A x% · Draw y% · B z% · g goals/game". Verified live:
     Arsenal–Man Utd 74 meetings, 23/20/31, 2.5 goals/game.
-  - **Next-match predicted XI in Compare** — reuse `/predicted-lineup`
-    (already used by the team-dashboard preview) so compare shows each club's
-    predicted starters with per-player `ai_score` (0-100), availability and
-    formation confidence; compare currently shows the *last finished* lineup.
+  - [x] **Next-match predicted XI in Compare** — orchestrator fetches both
+    sides in parallel with news (`previewAgent.getPredictedLineups`,
+    standings→preview slug bridge, per-side degrade to hidden) as
+    `predictedLineup` (shared Lineup shape); the panel renders a "Predicted
+    next XI" block reusing the player rows. Verified live: Real–City both
+    4-2-3-1 × 11. Noted: BSD 404s predictions for far-out events (Oct-10 PL
+    round) and times out under load — the hide-on-miss path is the honest
+    behavior, same class as H2H/injuries.
   - [x] **Raw xG numbers** — `bsdRowToStats` now also emits per-game
     `expectedGoalsFor/Against` (2dp, only when the season carries xG);
     compare shows xG scored/conceded rows (both-sides-or-neither) and the

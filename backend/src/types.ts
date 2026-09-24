@@ -99,6 +99,8 @@ export interface RetrievedTeamData {
   injuries: Injury[];
   /** Most recent confirmed/predicted XI. Absent when the provider has none. */
   lineup?: Lineup;
+  /** Predicted next XI from the preview model. Absent with no upcoming fixture. */
+  predictedLineup?: Lineup;
 }
 
 export interface CompareRequest {
