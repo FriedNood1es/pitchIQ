@@ -1,12 +1,14 @@
 import {
   bsd,
   BsdFixtureSummary,
+  BsdH2hResponse,
   BsdStandingRow,
 } from "../clients/bsdClient";
 import { getCompetition, Competition } from "../data/competitions";
 import { crestColorFor, slugify } from "../data/teamDirectory";
 import { errMsg, positionGroup } from "../utils";
 import {
+  H2hAggregates,
   HeadToHeadMatch,
   Injury,
   Intent,
@@ -38,13 +40,15 @@ async function retrieveFromBsd(intent: Intent): Promise<RetrievalResult> {
   // A club not in the pinned season's standings (newly promoted, UCL qualifier)
   // degrades to an empty team instead of failing the comparison — the
   // validation agent flags the gap and the UI shows a "no data" card.
-  const [teamA, teamB, headToHead] = await Promise.all([
+  const [teamA, teamB, h2h] = await Promise.all([
     rowA ? buildBsdTeam(intent.teamA, rowA, comp) : emptyTeamData(intent.teamA),
     rowB ? buildBsdTeam(intent.teamB, rowB, comp) : emptyTeamData(intent.teamB),
-    rowA && rowB ? fetchH2h(rowA, rowB, intent.teamA, intent.teamB, comp) : [],
+    rowA && rowB
+      ? fetchH2h(rowA, rowB, intent.teamA, intent.teamB, comp)
+      : { matches: [] as HeadToHeadMatch[], aggregates: undefined },
   ]);
 
-  return { teamA, teamB, headToHead };
+  return { teamA, teamB, headToHead: h2h.matches, headToHeadAggregates: h2h.aggregates };
 }
 
 /** Zeroed team data for a club absent from the pinned season's standings. */
@@ -176,7 +180,7 @@ async function fetchH2h(
   teamASlug: TeamId,
   teamBSlug: TeamId,
   comp: Competition
-): Promise<HeadToHeadMatch[]> {
+): Promise<{ matches: HeadToHeadMatch[]; aggregates?: H2hAggregates }> {
   try {
     console.log(`[retrieval] ${teamASlug} vs ${teamBSlug}: finding mutual fixture...`);
     const fixtures = await bsd.teamFixtures(
@@ -191,7 +195,7 @@ async function fetchH2h(
         (f.home_team_obj?.id === rowB.team_id &&
           f.away_team_obj?.id === rowA.team_id)
     );
-    if (!mutual) return [];
+    if (!mutual) return { matches: [] };
 
     const h2h = await bsd.v2H2h(mutual.id);
 
@@ -209,7 +213,7 @@ async function fetchH2h(
       return id ? (idToSlug.get(id) ?? slugify(name)) : slugify(name);
     };
 
-    return h2h.recent_matches
+    const matches = h2h.recent_matches
       .map((m) => {
         const [homeGoals, awayGoals] = m.score
           .split("-")
@@ -226,12 +230,45 @@ async function fetchH2h(
       .filter((m): m is HeadToHeadMatch => m !== null)
       .sort((a, b) => (a.date < b.date ? 1 : -1))
       .slice(0, 5);
+
+    return { matches, aggregates: toAggregates(h2h, mutual, idToSlug, teamASlug) };
   } catch (err) {
     console.warn(
       `[dataRetrievalAgent] H2H unavailable for ${rowA.team_id} vs ${rowB.team_id}: ${errMsg(err)}`
     );
-    return [];
+    return { matches: [] };
   }
+}
+
+/**
+ * Cross-season aggregates framed from team A's perspective. Rates derive from
+ * BSD's counts (its own rate fields are an unverified scale). The payload's
+ * home/away is the mutual event's framing, so attribute via its club ids.
+ */
+function toAggregates(
+  h2h: BsdH2hResponse,
+  mutual: BsdFixtureSummary,
+  idToSlug: Map<number, TeamId>,
+  teamASlug: TeamId
+): H2hAggregates | undefined {
+  const total = h2h.total_matches || 0;
+  if (total <= 0) return undefined;
+  const aHome = mutual.home_team_obj
+    ? idToSlug.get(mutual.home_team_obj.id) === teamASlug
+    : true;
+  const winsA = aHome ? h2h.home_wins : h2h.away_wins;
+  const winsB = aHome ? h2h.away_wins : h2h.home_wins;
+  const pct = (n: number) => Math.round((n / total) * 100);
+  return {
+    totalMatches: total,
+    winsA,
+    draws: h2h.draws,
+    winsB,
+    avgTotalGoals: Math.round(h2h.avg_total_goals * 10) / 10,
+    winRateA: pct(winsA),
+    drawRate: pct(h2h.draws),
+    winRateB: pct(winsB),
+  };
 }
 
 export function bsdRowToStats(teamId: TeamId, row: BsdStandingRow): TeamStats {

@@ -62,6 +62,22 @@ export interface HeadToHeadMatch {
   awayGoals: number;
 }
 
+/**
+ * Cross-season H2H aggregates from BSD's h2h payload, framed from team A's
+ * perspective. Rates are derived from the counts (BSD's own rate fields are
+ * an unverified scale), rounded to whole percent.
+ */
+export interface H2hAggregates {
+  totalMatches: number;
+  winsA: number;
+  draws: number;
+  winsB: number;
+  avgTotalGoals: number; // 1dp
+  winRateA: number;
+  drawRate: number;
+  winRateB: number;
+}
+
 export interface NewsItem {
   teamId: TeamId;
   headline: string;
@@ -99,6 +115,8 @@ export interface RetrievalResult {
   teamA: RetrievedTeamData;
   teamB: RetrievedTeamData;
   headToHead: HeadToHeadMatch[];
+  /** Absent when the clubs share no mutual event (same cases as empty H2H). */
+  headToHeadAggregates?: H2hAggregates;
 }
 
 export interface ValidationIssue {
@@ -155,6 +173,7 @@ export interface CompareReport {
     teamB: RetrievedTeamData;
   };
   headToHead: HeadToHeadMatch[];
+  headToHeadAggregates?: H2hAggregates;
   validationIssues: ValidationIssue[];
   insight: string;
   /** Whether insight came from a real LLM ("ai") or the template ("template"). */

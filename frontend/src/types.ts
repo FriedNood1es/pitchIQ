@@ -62,6 +62,18 @@ export interface HeadToHeadMatch {
   awayGoals: number;
 }
 
+/** Cross-season H2H aggregates, framed from team A's perspective. */
+export interface H2hAggregates {
+  totalMatches: number;
+  winsA: number;
+  draws: number;
+  winsB: number;
+  avgTotalGoals: number;
+  winRateA: number;
+  drawRate: number;
+  winRateB: number;
+}
+
 export interface NewsItem {
   teamId: TeamId;
   headline: string;
@@ -95,6 +107,7 @@ export interface CompareReport {
     teamB: { stats: TeamStats; injuries: Injury[]; lineup?: Lineup };
   };
   headToHead: HeadToHeadMatch[];
+  headToHeadAggregates?: H2hAggregates;
   validationIssues: { field: string; message: string }[];
   insight: string;
   insightGeneratedBy: "ai" | "template";

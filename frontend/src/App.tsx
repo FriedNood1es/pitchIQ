@@ -736,6 +736,7 @@ export default function App() {
               <div id="compare-h2h" className="scroll-mt-24">
                 <HeadToHeadPanel
                   headToHead={report.headToHead}
+                  aggregates={report.headToHeadAggregates}
                   teamA={report.intent.teamA}
                   teamB={report.intent.teamB}
                   teamAName={report.teams.teamA.stats.name}

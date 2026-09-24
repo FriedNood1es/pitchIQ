@@ -37,6 +37,7 @@ export async function runCompareOrchestrator(
       },
     },
     headToHead: validated.headToHead,
+    headToHeadAggregates: validated.headToHeadAggregates,
     validationIssues: validated.issues,
     insight: insight.summary,
     insightGeneratedBy: insight.generatedBy,

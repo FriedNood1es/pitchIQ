@@ -805,11 +805,11 @@ Unfinished / to do:
 - [ ] **Prediction-data phase (the app's real goal).** BSD already exposes most
   of what a prediction tool needs; the app just doesn't surface it all. In
   rough value order:
-  - **H2H aggregates** — BSD's `v2/events/{id}/h2h/` returns `home_win_rate`,
-    `away_win_rate`, `draws`, `avg_total_goals`, `total_matches`, but the
-    compare panel only shows the last-5 results. Surfacing the rates is a
-    direct implied-outcome + over/under signal (`fetchH2h` in
-    `dataRetrievalAgent.ts` currently drops them).
+  - [x] **H2H aggregates** — `fetchH2h` now returns the cross-season counts
+    framed from team A (rates derived from counts — BSD's own rate scale is
+    unverified) as `headToHeadAggregates`, threaded to the report; the panel
+    shows "N meetings · A x% · Draw y% · B z% · g goals/game". Verified live:
+    Arsenal–Man Utd 74 meetings, 23/20/31, 2.5 goals/game.
   - **Next-match predicted XI in Compare** — reuse `/predicted-lineup`
     (already used by the team-dashboard preview) so compare shows each club's
     predicted starters with per-player `ai_score` (0-100), availability and

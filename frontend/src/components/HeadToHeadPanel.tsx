@@ -1,9 +1,10 @@
-import { HeadToHeadMatch, TeamId } from "../types";
+import { HeadToHeadMatch, H2hAggregates, TeamId } from "../types";
 import { formatDateShort as formatDate } from "../dates";
 import { TeamName } from "./TeamName";
 
 interface Props {
   headToHead: HeadToHeadMatch[];
+  aggregates?: H2hAggregates;
   teamA: TeamId;
   teamB: TeamId;
   teamAName: string;
@@ -18,7 +19,7 @@ interface Props {
  * validation agent flags the gap and the UI states it plainly rather than
  * inventing fixtures.
  */
-export function HeadToHeadPanel({ headToHead, teamA, teamB, teamAName, teamBName, onOpenTeam }: Props) {
+export function HeadToHeadPanel({ headToHead, aggregates, teamA, teamB, teamAName, teamBName, onOpenTeam }: Props) {
   if (headToHead.length === 0) {
     return (
       <div className="tl-card h-full p-5">
@@ -33,6 +34,13 @@ export function HeadToHeadPanel({ headToHead, teamA, teamB, teamAName, teamBName
   return (
     <div className="tl-card h-full p-5">
       <h2 className="tl-card-title">Head-to-Head</h2>
+      {aggregates && aggregates.totalMatches > 0 && (
+        <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
+          {aggregates.totalMatches} meetings · {teamAName} {aggregates.winRateA}% · Draw{" "}
+          {aggregates.drawRate}% · {teamBName} {aggregates.winRateB}% ·{" "}
+          {aggregates.avgTotalGoals} goals/game
+        </p>
+      )}
       <ul className="mt-2 tl-divide">
         {headToHead.map((m, i) => {
           const aHome = m.homeTeam === teamA;
